@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* 🎨 Variables CSS para FotoEstudio */
+:root {
+  --color-primary: #8B5CF6;
+  --color-primary-light: #A78BFA;
+  --color-primary-dark: #7C3AED;
+  --color-secondary: #F59E0B;
+  --color-secondary-light: #FBBF24;
+  --color-accent: #EC4899;
+  --color-accent-light: #F472B6;
+  --color-neutral: #1F2937;
+  --color-neutral-light: #374151;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-text: #111827;
+  --color-text-light: #6B7280;
+}
+
+/* 🌟 Estilos base personalizados */
+@layer base {
+  body {
+    background-color: rgb(249 250 251);
+    color: rgb(17 24 39);
+    font-family: 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: rgb(17 24 39);
+  }
+}
+
+/* 🎯 Componentes personalizados */
+@layer components {
+  .btn-primary {
+    background-color: rgb(147 51 234);
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+  
+  .btn-primary:hover {
+    background-color: rgb(126 34 206);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  }
+  
+  .btn-secondary {
+    background-color: rgb(245 158 11);
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+  
+  .btn-secondary:hover {
+    background-color: rgb(217 119 6);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  }
+  
+  .btn-accent {
+    background-color: rgb(236 72 153);
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+  
+  .btn-accent:hover {
+    background-color: rgb(219 39 119);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  }
+  
+  .card-photo {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    transition: all 0.3s;
+    border: 1px solid rgb(243 244 246);
+  }
+  
+  .card-photo:hover {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  }
+  
+  .input-photo {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+  }
+  
+  .input-photo:focus {
+    outline: none;
+    border-color: rgb(147 51 234);
+    box-shadow: 0 0 0 3px rgb(147 51 234 / 0.1);
+  }
+  
+  .gradient-photo {
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+  }
+  
+  .gradient-warm {
+    background: linear-gradient(135deg, #F59E0B 0%, #F472B6 100%);
+  }
+}
+
+/* 🎨 Animaciones personalizadas */
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+  to { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6); }
+}
