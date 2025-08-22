@@ -10,7 +10,7 @@
             <p class="text-slate-300">Gestión del personal del estudio fotográfico</p>
           </div>
           <div class="flex items-center space-x-4">
-            <Link :href="route('usuarios.create')" class="bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-amber-600 hover:via-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-amber-500/25">
+            <Link href="/usuarios/create" class="bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-amber-600 hover:via-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-amber-500/25">
               <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
               Nuevo Usuario
             </Link>
@@ -105,13 +105,13 @@
 
       <!-- Acciones -->
       <div class="flex items-center space-x-2">
-        <Link :href="route('usuarios.show', usuario.id)" class="text-amber-400 hover:text-amber-300 p-2 rounded-lg hover:bg-amber-500/20">
+        <Link :href="`/usuarios/${usuario.id}`" class="text-amber-400 hover:text-amber-300 p-2 rounded-lg hover:bg-amber-500/20">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
           </svg>
         </Link>
-        <Link :href="route('usuarios.edit', usuario.id)" class="text-pink-400 hover:text-pink-300 p-2 rounded-lg hover:bg-pink-500/20">
+        <Link :href="`/usuarios/${usuario.id}/edit`" class="text-pink-400 hover:text-pink-300 p-2 rounded-lg hover:bg-pink-500/20">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
           </svg>
@@ -135,7 +135,7 @@
             </div>
             <h3 class="text-2xl font-bold text-white mb-4">No hay usuarios registrados</h3>
             <p class="text-slate-300 mb-8">Comienza agregando el primer usuario.</p>
-            <Link :href="route('usuarios.create')" class="bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-amber-600 hover:via-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-amber-500/25 inline-flex items-center">
+            <Link href="/usuarios/create" class="bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-amber-600 hover:via-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-amber-500/25 inline-flex items-center">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
               Crear Primer Usuario
             </Link>
@@ -177,8 +177,16 @@ const filteredUsuarios = computed(() => {
   return filtered
 })
 
-const generateReport = () => alert('Función de reporte en desarrollo')
-const deleteUser = (id) => { if (confirm('¿Eliminar usuario?')) router.delete(route('usuarios.destroy', id)) }
+const generateReport = () => {
+  // Crear un enlace temporal para descargar el PDF
+  const link = document.createElement('a')
+  link.href = window.route('reportes.usuarios.pdf')
+  link.download = 'reporte-usuarios.pdf'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+const deleteUser = (id) => { if (confirm('¿Eliminar usuario?')) router.delete(window.route('usuarios.destroy', id)) }
 const getInitials = (name) => (name || '').split(' ').map((n) => n[0]).join('').toUpperCase()
 const getRoleName = (idRol, rol) => (rol ? rol.nombre : 'Sin rol')
 const formatDate = (dateString) => { try { return new Date(dateString).toLocaleDateString('es-ES') } catch { return 'N/A' } }

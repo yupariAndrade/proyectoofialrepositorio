@@ -14,6 +14,8 @@ use App\Http\Controllers\DetalleTrabajoController;
 use App\Http\Controllers\AsignacionTrabajoController;
 use App\Http\Controllers\BitacoraTrabajoController;
 use App\Http\Controllers\RegistrarTrabajoController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('Dashboard');
@@ -26,15 +28,7 @@ Route::get('dashboard', function () {
 // ✅ Rutas para el sistema de fotoEstudio
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
-    Route::get('/dashboard', function () {
-        $servicios = \App\Models\Servicios::whereNotNull('imagenReferencia')
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get(['id','nombreServicio','precioReferencial','imagenReferencia']);
-        return Inertia::render('Dashboard', [
-            'servicios' => $servicios,
-        ]);
-    })->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // Usuarios
     Route::controller(UsuarioController::class)->group(function () {
@@ -197,6 +191,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/registrar-trabajos/{trabajo:slug}/edit', [RegistrarTrabajoController::class, 'edit'])->name('registrar-trabajos.edit');
         Route::put('/registrar-trabajos/{trabajo:slug}', [RegistrarTrabajoController::class, 'update'])->name('registrar-trabajos.update');
         Route::delete('/registrar-trabajos/{trabajo:slug}', [RegistrarTrabajoController::class, 'destroy'])->name('registrar-trabajos.destroy');
+    });
+
+    // Reportes
+    Route::controller(ReporteController::class)->group(function () {
+        Route::get('/reportes/usuarios', [ReporteController::class, 'reporteUsuarios'])->name('reportes.usuarios');
+        Route::get('/reportes/usuarios/pdf', [ReporteController::class, 'generarPDFUsuarios'])->name('reportes.usuarios.pdf');
     });
 });
 
