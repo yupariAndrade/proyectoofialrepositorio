@@ -50,3 +50,7 @@ const props = defineProps({ asignacion: { type: Object, required: true } })
 const asignacion = props.asignacion
 const formatDate = (d) => { try { return new Date(d).toLocaleDateString('es-ES') } catch { return '—' } }
 </script>
+
+
+
+

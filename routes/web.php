@@ -13,6 +13,7 @@ use App\Http\Controllers\PagoController;
 use App\Http\Controllers\DetalleTrabajoController;
 use App\Http\Controllers\AsignacionTrabajoController;
 use App\Http\Controllers\BitacoraTrabajoController;
+use App\Http\Controllers\RegistrarTrabajoController;
 
 Route::get('/', function () {
     return Inertia::render('Dashboard');
@@ -182,6 +183,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Checkout múltiple
         Route::get('/pagos/checkout', [PagoController::class, 'checkout'])->name('pagos.checkout');
         Route::post('/pagos/multiple', [PagoController::class, 'storeMultiple'])->name('pagos.storeMultiple');
+    });
+
+    // Registrar Trabajos (Formulario Integrado)
+    Route::controller(RegistrarTrabajoController::class)->group(function () {
+        // Rutas específicas primero (sin parámetros)
+        Route::get('/registrar-trabajos', [RegistrarTrabajoController::class, 'index'])->name('registrar-trabajos');
+        Route::get('/registrar-trabajos/create', [RegistrarTrabajoController::class, 'create'])->name('registrar-trabajos.create');
+        Route::post('/registrar-trabajos', [RegistrarTrabajoController::class, 'store'])->name('registrar-trabajos.store');
+        
+        // Rutas con parámetros después (usando slug)
+        Route::get('/registrar-trabajos/{trabajo:slug}', [RegistrarTrabajoController::class, 'show'])->name('registrar-trabajos.show');
+        Route::get('/registrar-trabajos/{trabajo:slug}/edit', [RegistrarTrabajoController::class, 'edit'])->name('registrar-trabajos.edit');
+        Route::put('/registrar-trabajos/{trabajo:slug}', [RegistrarTrabajoController::class, 'update'])->name('registrar-trabajos.update');
+        Route::delete('/registrar-trabajos/{trabajo:slug}', [RegistrarTrabajoController::class, 'destroy'])->name('registrar-trabajos.destroy');
     });
 });
 

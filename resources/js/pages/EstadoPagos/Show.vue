@@ -65,3 +65,7 @@ const estado = props.estado
 
 const formatDate = (d) => { try { return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) } catch { return '—' } }
 </script>
+
+
+
+

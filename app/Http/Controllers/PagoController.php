@@ -24,11 +24,12 @@ class PagoController extends Controller
         $clienteId = $request->query('cliente');
         $resumen = null;
         $trabajosPendientes = [];
+        
         if ($clienteId) {
             $trabajosCliente = Trabajos::with('servicio')->where('idCliente', $clienteId)->get();
             $totalTrabajos = $trabajosCliente->sum(fn($t) => (float) ($t->servicio->precioReferencial ?? 0));
             $pagosCliente = Pagos::with('estadoPago','trabajo')->whereIn('idTrabajo', $trabajosCliente->pluck('id'))->get();
-            $totalPagado = $pagosCliente->filter(fn($p) => strtolower($p->estadoPago->nombre ?? '') === 'pagado')->sum('monto');
+            $totalPagado = $pagosCliente->filter(fn($p) => strtolower($p->estadoPago->nombre ?? '') === 'pagado')->sum('aCuenta');
             $totalPendiente = max($totalTrabajos - $totalPagado, 0);
 
             // Trabajos sin un pago con estado 'Pagado'
@@ -56,7 +57,7 @@ class PagoController extends Controller
      */
     public function create()
     {
-        $trabajos = Trabajos::with(['cliente', 'servicio'])->get();
+        $trabajos = Trabajos::with(['cliente', 'servicio', 'detalleTrabajo'])->get();
         $estadosPago = EstadoPago::all();
         
         return Inertia::render('Pagos/Create', [
@@ -72,19 +73,30 @@ class PagoController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'idTrabajo' => 'required|exists:trabajos,id',
-            'monto' => 'required|numeric|min:0',
-            'fecha' => 'required|date',
-            'comentario' => 'nullable|string|max:255',
-            'idEstadoPago' => 'required|exists:estados_pago,id'
+            'aCuenta' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        Pagos::create($request->only(['idTrabajo','monto','fecha','comentario','idEstadoPago']));
+        try {
+            // Calcular automáticamente usando el modelo
+            $datosPago = Pagos::calcularPago($request->idTrabajo, $request->aCuenta);
+            
+            // Crear el pago
+            Pagos::create([
+                'idTrabajo' => $request->idTrabajo,
+                'total' => $datosPago['total'],
+                'aCuenta' => $datosPago['aCuenta'],
+                'saldo' => $datosPago['saldo'],
+                'idEstadoPago' => $datosPago['idEstadoPago'],
+            ]);
 
-        return redirect()->route('pagos')->with('success', 'Pago registrado correctamente');
+            return redirect()->route('pagos')->with('success', 'Pago registrado correctamente');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()])->withInput();
+        }
     }
 
     /**
@@ -105,7 +117,7 @@ class PagoController extends Controller
     public function edit($id)
     {
         $pago = Pagos::findOrFail($id);
-        $trabajos = Trabajos::with(['cliente', 'servicio'])->get();
+        $trabajos = Trabajos::with(['cliente', 'servicio', 'detalleTrabajo'])->get();
         $estadosPago = EstadoPago::all();
         
         return Inertia::render('Pagos/Edit', [
@@ -124,19 +136,29 @@ class PagoController extends Controller
 
         $validator = Validator::make($request->all(), [
             'idTrabajo' => 'required|exists:trabajos,id',
-            'monto' => 'required|numeric|min:0',
-            'fecha' => 'required|date',
-            'comentario' => 'nullable|string|max:255',
-            'idEstadoPago' => 'required|exists:estados_pago,id'
+            'aCuenta' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $pago->update($request->only(['idTrabajo','monto','fecha','comentario','idEstadoPago']));
+        try {
+            // Recalcular el pago
+            $datosPago = Pagos::calcularPago($request->idTrabajo, $request->aCuenta);
+            
+            $pago->update([
+                'idTrabajo' => $request->idTrabajo,
+                'total' => $datosPago['total'],
+                'aCuenta' => $datosPago['aCuenta'],
+                'saldo' => $datosPago['saldo'],
+                'idEstadoPago' => $datosPago['idEstadoPago'],
+            ]);
 
-        return redirect()->route('pagos')->with('success', 'Pago actualizado correctamente');
+            return redirect()->route('pagos')->with('success', 'Pago actualizado correctamente');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()])->withInput();
+        }
     }
 
     /**
@@ -184,12 +206,12 @@ class PagoController extends Controller
     public function checkout(Request $request)
     {
         $ids = collect($request->input('trabajos', []))->filter()->values();
-        $trabajos = Trabajos::with(['cliente','servicio'])->whereIn('id', $ids)->get();
+        $trabajos = Trabajos::with(['cliente','servicio', 'detalleTrabajo'])->whereIn('id', $ids)->get();
         $estadoPendiente = EstadoPago::orderBy('id')->first();
+        
         return Inertia::render('Pagos/Checkout', [
             'trabajos' => $trabajos,
             'estadoDefault' => $estadoPendiente?->id,
-            'hoy' => now()->toDateString(),
         ]);
     }
 
@@ -199,25 +221,24 @@ class PagoController extends Controller
         $data = $request->validate([
             'trabajos' => 'required|array|min:1',
             'trabajos.*' => 'integer|exists:trabajos,id',
-            'fecha' => 'required|date',
-            'comentario' => 'nullable|string|max:255',
-            'idEstadoPago' => 'required|exists:estados_pago,id',
+            'aCuenta' => 'required|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($data) {
-            $trabajos = Trabajos::with('servicio')->whereIn('id', $data['trabajos'])->get();
-            foreach ($trabajos as $t) {
-                $monto = (float) ($t->servicio->precioReferencial ?? 0);
+            foreach ($data['trabajos'] as $trabajoId) {
+                // Calcular automáticamente para cada trabajo
+                $datosPago = Pagos::calcularPago($trabajoId, $data['aCuenta']);
+                
                 Pagos::create([
-                    'idTrabajo' => $t->id,
-                    'monto' => $monto,
-                    'fecha' => $data['fecha'],
-                    'comentario' => $data['comentario'] ?? null,
-                    'idEstadoPago' => $data['idEstadoPago'],
+                    'idTrabajo' => $trabajoId,
+                    'total' => $datosPago['total'],
+                    'aCuenta' => $datosPago['aCuenta'],
+                    'saldo' => $datosPago['saldo'],
+                    'idEstadoPago' => $datosPago['idEstadoPago'],
                 ]);
             }
         });
 
-        return redirect()->route('pagos')->with('success', 'Pagos registrados');
+        return redirect()->route('pagos')->with('success', 'Pagos registrados correctamente');
     }
 }

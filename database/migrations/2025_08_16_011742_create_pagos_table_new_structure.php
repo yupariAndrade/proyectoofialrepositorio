@@ -13,12 +13,11 @@ return new class extends Migration
     {
         Schema::create('pagos', function (Blueprint $table) {
             $table->id('idPago');
-            $table->foreignId('idTrabajo')->constrained('trabajos');
-            $table->decimal('monto', 10, 2);
-            $table->date('fecha');
-            $table->string('comentario', 255)->nullable();
+            $table->foreignId('idTrabajo')->constrained('trabajos')->onDelete('cascade');
+            $table->decimal('total', 10, 2);           // Precio del servicio × Cantidad
+            $table->decimal('aCuenta', 10, 2);         // Lo que paga el cliente
+            $table->decimal('saldo', 10, 2);           // Lo que falta por pagar
             $table->foreignId('idEstadoPago')->constrained('estados_pago');
-            $table->timestamps();
         });
     }
 

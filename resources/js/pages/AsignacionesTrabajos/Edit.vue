@@ -69,3 +69,7 @@ const props = defineProps({ asignacion: { type: Object, required: true }, trabaj
 const form = useForm({ idTrabajo: props.asignacion.idTrabajo || '', idUsuario: props.asignacion.idUsuario || '', turno: props.asignacion.turno || '', fechaAsignacion: props.asignacion.fechaAsignacion || '' })
 const submit = () => form.put(route('asignaciones-trabajos.update', props.asignacion.id))
 </script>
+
+
+
+

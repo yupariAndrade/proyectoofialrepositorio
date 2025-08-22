@@ -37,37 +37,49 @@
             </div>
           </div>
         </div>
+<!-- Lista de roles en filas -->
+<div v-if="filteredRoles.length" class="space-y-4">
+  <div
+    v-for="rol in filteredRoles"
+    :key="rol.id"
+    class="flex items-center justify-between bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-lg border border-white/10 p-4 hover:shadow-amber-500/20 transition-all duration-300"
+  >
+    <!-- Icono en círculo -->
+    <div class="flex items-center space-x-4">
+      <div class="w-14 h-14 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+        </svg>
+      </div>
+      <!-- Nombre y fecha -->
+      <div>
+        <h3 class="text-lg font-bold text-white">{{ rol.nombre }}</h3>
+        <p class="text-xs text-slate-500">Creado: {{ formatDate(rol.created_at) }}</p>
+      </div>
+    </div>
 
-        <!-- Lista de roles -->
-        <div v-if="filteredRoles.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-          <div v-for="rol in filteredRoles" :key="rol.id" class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden hover:shadow-amber-500/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
-            <div class="relative">
-              <div class="w-full h-32 bg-gradient-to-br from-amber-500/20 via-pink-500/20 to-purple-600/20 flex items-center justify-center backdrop-blur-sm">
-                <div class="w-16 h-16 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
-                  <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                </div>
-              </div>
-            </div>
-            <div class="p-6">
-              <h3 class="text-xl font-bold text-white mb-4">{{ rol.nombre }}</h3>
-              <div class="flex items-center justify-between mb-4">
-                <!--<span class="text-sm text-slate-400">ID: #{{ rol.id }}</span>-->
-                <div class="flex items-center space-x-2">
-                  <Link :href="route('roles.show', rol.id)" class="text-amber-400 hover:text-amber-300 transition-colors p-2 hover:bg-amber-500/20 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  </Link>
-                  <Link :href="route('roles.edit', rol.id)" class="text-pink-400 hover:text-pink-300 transition-colors p-2 hover:bg-pink-500/20 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                  </Link>
-                  <button @click="deleteRole(rol.id)" class="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-500/20 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  </button>
-                </div>
-              </div>
-              <div class="text-xs text-slate-500">Creado: {{ formatDate(rol.created_at) }}</div>
-            </div>
-          </div>
-        </div>
+    <!-- Acciones -->
+    <div class="flex items-center space-x-2">
+      <Link :href="route('roles.show', rol.id)" class="text-amber-400 hover:text-amber-300 transition-colors p-2 hover:bg-amber-500/20 rounded-lg">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+      </Link>
+      <Link :href="route('roles.edit', rol.id)" class="text-pink-400 hover:text-pink-300 transition-colors p-2 hover:bg-pink-500/20 rounded-lg">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+      </Link>
+      <button @click="deleteRole(rol.id)" class="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-500/20 rounded-lg">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 
         <!-- Estado vacío -->
         <div v-else class="text-center py-16">

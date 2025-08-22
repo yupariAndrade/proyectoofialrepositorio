@@ -12,13 +12,14 @@ import { BookOpen, Folder, LayoutGrid, Users, Settings, ClipboardList, UserCheck
 // Menú principal
 const mainNavItems = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+  { title: 'Registrar Trabajos', href: '/registrar-trabajos', icon: ClipboardSignature },
   { title: 'Clientes', href: '/clientes', icon: UserCheck },
   { title: 'Servicios', href: '/servicios', icon: ClipboardList },
-  { title: 'Trabajos', href: '/trabajos', icon: Briefcase },
-  { title: 'Detalle de Trabajo', href: '/detalle-trabajo', icon: ClipboardCheck },
-  { title: 'Asignaciones', href: '/asignaciones-trabajos', icon: ClipboardSignature },
-  { title: 'Bitácora', href: '/bitacora-trabajos', icon: Notebook },
-  { title: 'Pagos', href: '/pagos', icon: CreditCard },
+  /*{ title: 'Trabajos', href: '/trabajos', icon: Briefcase },*/
+  /*{ title: 'Detalle de Trabajo', href: '/detalle-trabajo', icon: ClipboardCheck },*/
+  /*{ title: 'Asignaciones', href: '/asignaciones-trabajos', icon: ClipboardSignature },*/
+  /*{ title: 'Bitácora', href: '/bitacora-trabajos', icon: Notebook },*/
+  /*{ title: 'Pagos', href: '/pagos', icon: CreditCard },*/
   { title: 'Estados de Pago', href: '/estado-pagos', icon: CheckCircle },
   { title: 'Estados Trabajo', href: '/estados-trabajo', icon: Activity },
   { title: 'Usuarios', href: '/usuarios', icon: Users },

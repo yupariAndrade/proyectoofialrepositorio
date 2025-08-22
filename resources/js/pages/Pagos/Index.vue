@@ -249,3 +249,7 @@ const getEstadoColor = (estadoNombre) => {
   return 'bg-slate-500/20 text-slate-400 border-slate-500/30'
 }
 </script>
+
+
+
+

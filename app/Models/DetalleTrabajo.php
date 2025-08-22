@@ -22,7 +22,6 @@ class DetalleTrabajo extends Model
         'cantidad',
         'tipoDocumento',
         'tipoEvento',
-        'otros',
     ];
 
     public $timestamps = true;

@@ -69,3 +69,7 @@ const props = defineProps({ trabajos: { type: Array, required: true }, usuarios:
 const form = useForm({ idTrabajo: '', idUsuario: '', turno: '', fechaAsignacion: '' })
 const submit = () => form.post(route('asignaciones-trabajos.store'))
 </script>
+
+
+
+

@@ -278,3 +278,4 @@ Todos los endpoints devuelven errores de validación en formato JSON:
 3. **Reportes**: Agregar más tipos de reportes
 4. **Notificaciones**: Sistema de alertas
 5. **Dashboard**: Estadísticas en tiempo real
+

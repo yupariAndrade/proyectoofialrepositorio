@@ -48,7 +48,6 @@ class DetalleTrabajoController extends Controller
             'cantidad' => 'required|integer|min:1',
             'tipoDocumento' => 'nullable|string|max:100',
             'tipoEvento' => 'nullable|string|max:100',
-            'otros' => 'nullable|string|max:255'
         ]);
 
         if ($validator->fails()) {
@@ -102,7 +101,6 @@ class DetalleTrabajoController extends Controller
             'cantidad' => 'required|integer|min:1',
             'tipoDocumento' => 'nullable|string|max:100',
             'tipoEvento' => 'nullable|string|max:100',
-            'otros' => 'nullable|string|max:255'
         ]);
 
         if ($validator->fails()) {

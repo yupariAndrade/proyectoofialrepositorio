@@ -92,3 +92,7 @@ const form = useForm({ idTrabajo: '', idEstadoPago: '', monto: '', fecha: '', co
 
 const submit = () => { form.post(route('pagos.store'), { onSuccess: () => form.reset() }) }
 </script>
+
+
+
+

@@ -74,3 +74,7 @@ const filtered = computed(() => {
 const del = (id) => { if (confirm('¿Eliminar asignación?')) router.delete(route('asignaciones-trabajos.destroy', id)) }
 const formatDate = (d) => { try { return new Date(d).toLocaleDateString('es-ES') } catch { return '—' } }
 </script>
+
+
+
+
