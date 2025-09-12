@@ -4,13 +4,15 @@ import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSep
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
 import { LogOut, Settings } from 'lucide-vue-next';
+import { route } from 'ziggy-js';
 
 interface Props {
     user: User;
 }
 
 const handleLogout = () => {
-    router.flushAll();
+    // El logout se maneja automáticamente por el Link con method="post"
+    // El router de Inertia se encarga de la redirección
 };
 
 defineProps<Props>();

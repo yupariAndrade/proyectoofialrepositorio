@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Usuarios;
 use App\Models\Roles;
+use App\Models\Clientes;
+use App\Models\Servicios;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 
@@ -30,19 +32,11 @@ class ReporteController extends Controller
     {
         try {
             $usuarios = Usuarios::with('rol')->get();
-            
-            // Estadísticas
-            $totalUsuarios = $usuarios->count();
-            $usuariosActivos = $usuarios->where('estado', true)->count();
-            $usuariosInactivos = $usuarios->where('estado', false)->count();
             $fechaGeneracion = now()->format('d/m/Y H:i:s');
             
             // Generar el HTML para el PDF
             $html = view('reportes.usuarios', compact(
                 'usuarios', 
-                'totalUsuarios', 
-                'usuariosActivos', 
-                'usuariosInactivos', 
                 'fechaGeneracion'
             ))->render();
             
@@ -50,7 +44,85 @@ class ReporteController extends Controller
             $pdf = Pdf::loadHTML($html);
             
             // Descargar el PDF
-            return $pdf->download('reporte-usuarios-' . now()->format('Y-m-d-H-i-s') . '.pdf');
+            return $pdf->download('lista-usuarios-' . now()->format('Y-m-d-H-i-s') . '.pdf');
+            
+        } catch (\Exception $e) {
+            // Log the error
+            Log::error('Error generating PDF: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            // Return error response
+            return response()->json([
+                'error' => 'Error generating PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mostrar el reporte de clientes
+     */
+    public function reporteClientes()
+    {
+        $clientes = Clientes::with('usuario')->get();
+        
+        return Inertia::render('Reportes/Clientes/ReporteClientes', [
+            'clientes' => $clientes
+        ]);
+    }
+
+    /**
+     * Generar PDF del reporte de clientes
+     */
+    public function generarPDFClientes()
+    {
+        try {
+            $clientes = Clientes::with('usuario')->get();
+            $fechaGeneracion = now()->format('d/m/Y H:i:s');
+            
+            // Generar el HTML para el PDF
+            $html = view('reportes.clientes', compact(
+                'clientes', 
+                'fechaGeneracion'
+            ))->render();
+            
+            // Generar el PDF
+            $pdf = Pdf::loadHTML($html);
+            
+            // Descargar el PDF
+            return $pdf->download('lista-clientes-' . now()->format('Y-m-d-H-i-s') . '.pdf');
+            
+        } catch (\Exception $e) {
+            // Log the error
+            Log::error('Error generating PDF: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            // Return error response
+            return response()->json([
+                'error' => 'Error generating PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generar PDF del reporte de servicios
+     */
+    public function generarPDFServicios()
+    {
+        try {
+            $servicios = Servicios::with('usuario')->get();
+            $fechaGeneracion = now()->format('d/m/Y H:i:s');
+            
+            // Generar el HTML para el PDF
+            $html = view('reportes.servicios', compact(
+                'servicios', 
+                'fechaGeneracion'
+            ))->render();
+            
+            // Generar el PDF
+            $pdf = Pdf::loadHTML($html);
+            
+            // Descargar el PDF
+            return $pdf->download('lista-servicios-' . now()->format('Y-m-d-H-i-s') . '.pdf');
             
         } catch (\Exception $e) {
             // Log the error

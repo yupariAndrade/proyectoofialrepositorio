@@ -133,3 +133,15 @@
   from { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
   to { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6); }
 }
+
+/* Ocultar scrollbar SOLO en el Sidebar */
+.app-sidebar::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+.app-sidebar {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE y Edge antiguos */
+}
+

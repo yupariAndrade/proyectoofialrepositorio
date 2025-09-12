@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\UsuarioController;
@@ -11,27 +12,38 @@ use App\Http\Controllers\EstadoTrabajoController;
 use App\Http\Controllers\EstadoPagoController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\DetalleTrabajoController;
-use App\Http\Controllers\AsignacionTrabajoController;
 use App\Http\Controllers\BitacoraTrabajoController;
 use App\Http\Controllers\RegistrarTrabajoController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ForgotPasswordController;
 
+// Ruta principal - Dashboard público para todos
 Route::get('/', function () {
     return Inertia::render('Dashboard');
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Rutas de autenticación
+Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
+Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
 
-// ✅ Rutas para el sistema de fotoEstudio
-Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+// Rutas de recuperación de contraseña
+Route::get('/forgot-password', [ForgotPasswordController::class, 'show'])->name('password.request');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'updatePassword'])->name('password.update');
 
-    // Usuarios
-    Route::controller(UsuarioController::class)->group(function () {
+// Dashboard principal - PÚBLICO (sin autenticación) - Muestra estadísticas y catálogo
+Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
+// Dashboard autenticado - con menús según rol (para administradores)
+Route::get('/dashboard-admin', [App\Http\Controllers\AuthController::class, 'dashboard'])->middleware(['auth'])->name('dashboard.admin');
+
+// ✅ Rutas para el sistema de fotoEstudio - REQUIEREN AUTENTICACIÓN
+Route::middleware(['auth'])->group(function () {
+    // Dashboard administrativo (ya no se usa /dashboard aquí)
+
+    // Usuarios - Solo administradores
+    Route::middleware(['role:administrador'])->controller(UsuarioController::class)->group(function () {
         Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios');
         Route::get('/usuarios/create', [UsuarioController::class, 'create'])->name('usuarios.create');
         Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
@@ -39,6 +51,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/usuarios/{id}/edit', [UsuarioController::class, 'edit'])->name('usuarios.edit');
         Route::put('/usuarios/{id}', [UsuarioController::class, 'update'])->name('usuarios.update');
         Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy'])->name('usuarios.destroy');
+        
+        // Ruta para verificar campos duplicados
+        Route::post('/api/usuarios/verificar-campo', [UsuarioController::class, 'verificarCampo'])->name('usuarios.verificar-campo');
     });
 
     // Servicios
@@ -70,6 +85,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/servicios', [ServicioController::class, 'store'])->name('servicios.store');
         Route::put('/servicios/{id}', [ServicioController::class, 'update'])->name('servicios.update');
         Route::delete('/servicios/{id}', [ServicioController::class, 'destroy'])->name('servicios.destroy');
+        Route::post('/servicios/verificar-duplicado', [ServicioController::class, 'verificarDuplicado'])->name('servicios.verificar-duplicado');
+        Route::post('/servicios/limpiar-duplicados', [ServicioController::class, 'limpiarDuplicados'])->name('servicios.limpiar-duplicados');
     });
 
     // Roles
@@ -83,8 +100,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/roles/{id}', [RolesController::class, 'destroy'])->name('roles.destroy');
     });
 
-    // Clientes
-    Route::controller(ClienteController::class)->group(function () {
+    // Clientes - Administradores y Empleados
+    Route::middleware(['auth'])->controller(ClienteController::class)->group(function () {
         Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes');
         Route::get('/clientes/create', [ClienteController::class, 'create'])->name('clientes.create');
         Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
@@ -99,7 +116,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/trabajos', [TrabajoController::class, 'index'])->name('trabajos');
         Route::get('/trabajos/create', [TrabajoController::class, 'create'])->name('trabajos.create');
         Route::post('/trabajos', [TrabajoController::class, 'store'])->name('trabajos.store');
-        Route::get('/trabajos/{id}', [TrabajoController::class, 'show'])->name('trabajos.show');
+        Route::get('/trabajos/{trabajo:slug}', [TrabajoController::class, 'show'])->name('trabajos.show');
         Route::get('/trabajos/{id}/edit', [TrabajoController::class, 'edit'])->name('trabajos.edit');
         Route::put('/trabajos/{id}', [TrabajoController::class, 'update'])->name('trabajos.update');
         Route::delete('/trabajos/{id}', [TrabajoController::class, 'destroy'])->name('trabajos.destroy');
@@ -153,15 +170,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Asignaciones de Trabajo
-    Route::controller(AsignacionTrabajoController::class)->group(function () {
-        Route::get('/asignaciones-trabajos', [AsignacionTrabajoController::class, 'index'])->name('asignaciones-trabajos');
-        Route::get('/asignaciones-trabajos/create', [AsignacionTrabajoController::class, 'create'])->name('asignaciones-trabajos.create');
-        Route::post('/asignaciones-trabajos', [AsignacionTrabajoController::class, 'store'])->name('asignaciones-trabajos.store');
-        Route::get('/asignaciones-trabajos/{id}', [AsignacionTrabajoController::class, 'show'])->name('asignaciones-trabajos.show');
-        Route::get('/asignaciones-trabajos/{id}/edit', [AsignacionTrabajoController::class, 'edit'])->name('asignaciones-trabajos.edit');
-        Route::put('/asignaciones-trabajos/{id}', [AsignacionTrabajoController::class, 'update'])->name('asignaciones-trabajos.update');
-        Route::delete('/asignaciones-trabajos/{id}', [AsignacionTrabajoController::class, 'destroy'])->name('asignaciones-trabajos.destroy');
-    });
 
     // Pagos
     Route::controller(PagoController::class)->group(function () {
@@ -197,6 +205,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::controller(ReporteController::class)->group(function () {
         Route::get('/reportes/usuarios', [ReporteController::class, 'reporteUsuarios'])->name('reportes.usuarios');
         Route::get('/reportes/usuarios/pdf', [ReporteController::class, 'generarPDFUsuarios'])->name('reportes.usuarios.pdf');
+        Route::get('/reportes/servicios/pdf', [ReporteController::class, 'generarPDFServicios'])->name('reportes.servicios.pdf');
+        Route::get('/reportes/clientes', [ReporteController::class, 'reporteClientes'])->name('reportes.clientes');
+        Route::get('/reportes/clientes/pdf', [ReporteController::class, 'generarPDFClientes'])->name('reportes.clientes.pdf');
     });
 });
 
@@ -230,10 +241,6 @@ Route::prefix('api')->as('api.')->middleware(['auth', 'verified'])->group(functi
     Route::apiResource('detalles-trabajo', DetalleTrabajoController::class);
     Route::get('detalles-trabajo/trabajo/{trabajoId}', [DetalleTrabajoController::class, 'porTrabajo']);
     
-    // Asignaciones de Trabajo
-    Route::apiResource('asignaciones-trabajo', AsignacionTrabajoController::class);
-    Route::get('asignaciones-trabajo/trabajo/{trabajoId}', [AsignacionTrabajoController::class, 'porTrabajo']);
-    Route::get('asignaciones-trabajo/usuario/{usuarioId}', [AsignacionTrabajoController::class, 'porUsuario']);
     
     // Bitácora de Trabajos
     Route::apiResource('bitacora-trabajos', BitacoraTrabajoController::class);

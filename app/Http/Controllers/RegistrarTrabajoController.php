@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,7 @@ use App\Models\Clientes;
 use App\Models\Servicios;
 use App\Models\EstadosTrabajo;
 use App\Models\EstadoPago;
+use App\Models\Usuarios;
 
 class RegistrarTrabajoController extends Controller
 {
@@ -38,41 +40,117 @@ class RegistrarTrabajoController extends Controller
     {
         $trabajos = Trabajos::with([
             'cliente', 
-            'servicio', 
-            'detalleTrabajo', 
+            'detallesTrabajo.servicio', 
+            'detallesTrabajo.pago', 
             'estado', 
-            'pagos.estadoPago'
+            'estadoPago',
+            'usuario',
+            'responsable',
+            'pagos' // Agregar relación con pagos
         ])->orderBy('fechaRegistro', 'desc')->get();
         
-        // Forzar la serialización manual para asegurar que las relaciones se carguen
+        // Transformar los datos para el frontend en el formato correcto
         $trabajosSerializados = $trabajos->map(function ($trabajo) {
+            // Calcular total CON descuentos aplicados (en tiempo real)
+            $totalTrabajo = $trabajo->detallesTrabajo->sum(function ($detalle) {
+                $precioOriginal = $detalle->servicio->precioReferencial ?? 0;
+                $descuento = $detalle->descuento ?? 0;
+                $precioFinal = $precioOriginal - $descuento;
+                $cantidad = $detalle->cantidad ?? 1;
+                return $precioFinal * $cantidad;
+            });
+
+            // Obtener datos de la tabla pagos (último pago)
+            $ultimoPago = $trabajo->pagos()->latest('idPago')->first();
+            $totalPagado = $ultimoPago ? $ultimoPago->aCuenta : 0;
+            $saldo = $totalTrabajo - $totalPagado;
+            
+            // Debug: Log de datos de pago
+            Log::info('🔍 Datos de pago para trabajo ' . $trabajo->id, [
+                'totalTrabajoCalculado' => $totalTrabajo,
+                'totalPagado' => $totalPagado,
+                'saldoCalculado' => $saldo,
+                'tienePagos' => $trabajo->pagos()->count(),
+                'servicios' => $trabajo->detallesTrabajo->map(function($detalle) {
+                    return [
+                        'servicio' => $detalle->servicio->nombreServicio ?? 'Sin nombre',
+                        'precioOriginal' => $detalle->servicio->precioReferencial ?? 0,
+                        'descuento' => $detalle->descuento ?? 0,
+                        'cantidad' => $detalle->cantidad ?? 1,
+                        'subtotal' => (($detalle->servicio->precioReferencial ?? 0) - ($detalle->descuento ?? 0)) * ($detalle->cantidad ?? 1)
+                    ];
+                })
+            ]);
+
+            // Transformar servicios para el frontend
+            $servicios = $trabajo->detallesTrabajo->map(function ($detalle) {
+                $precioOriginal = $detalle->servicio->precioReferencial ?? 0;
+                $descuento = $detalle->descuento ?? 0;
+                $precioFinal = $precioOriginal - $descuento;
+                
+                // Log para debug
+                Log::info('🔍 Servicio transformado:', [
+                    'id' => $detalle->id,
+                    'nombreServicio' => $detalle->servicio->nombreServicio ?? 'Servicio no especificado',
+                    'precioOriginal' => $precioOriginal,
+                    'descuento' => $descuento,
+                    'precioFinal' => $precioFinal,
+                ]);
+                
+                return [
+                    'id' => $detalle->id,
+                    'nombreServicio' => $detalle->servicio->nombreServicio ?? 'Servicio no especificado',
+                    'precio' => $precioOriginal,
+                    'precioFinal' => $precioFinal,
+                    'descuento' => $descuento,
+                    'cantidad' => $detalle->cantidad ?? 1,
+                    'subtotal' => $precioFinal * ($detalle->cantidad ?? 1),
+                    'descripcion' => $detalle->descripcion,
+                    'tamano' => $detalle->tamano,
+                    'color' => $detalle->color,
+                    'modelo' => $detalle->modelo,
+                    'tipoDocumento' => $detalle->tipoDocumento,
+                    'tipoEvento' => $detalle->tipoEvento,
+                ];
+            });
+
             return [
                 'id' => $trabajo->id,
-                'slug' => $trabajo->slug, // Agregar el campo slug
                 'idCliente' => $trabajo->idCliente,
-                'idServicio' => $trabajo->idServicio,
-                'idUsuario' => $trabajo->idUsuario,
                 'fechaRegistro' => $trabajo->fechaRegistro,
                 'fechaEntrega' => $trabajo->fechaEntrega,
                 'idEstado' => $trabajo->idEstado,
-                'cliente' => $trabajo->cliente,
-                'servicio' => $trabajo->servicio,
-                'estado' => $trabajo->estado,
-                'detalleTrabajo' => $trabajo->detalleTrabajo,
-                'pagos' => $trabajo->pagos->map(function ($pago) {
-                    return [
-                        'idPago' => $pago->idPago,
-                        'idTrabajo' => $pago->idTrabajo,
-                        'total' => $pago->total,
-                        'aCuenta' => $pago->aCuenta,
-                        'saldo' => $pago->saldo,
-                        'idEstadoPago' => $pago->idEstadoPago,
-                        'estadoPago' => $pago->estadoPago ? [
-                            'id' => $pago->estadoPago->id,
-                            'nombre' => $pago->estadoPago->nombre
-                        ] : null
-                    ];
-                })
+                'idEstadoPago' => $trabajo->estadoPago->id ?? 0,
+                'slug' => $trabajo->slug ?? '',
+                'total' => $totalTrabajo,
+                'aCuenta' => $totalPagado,
+                'saldo' => $saldo,
+                'cliente' => [
+                    'id' => $trabajo->cliente->id ?? 0,
+                    'nombre' => $trabajo->cliente->nombre ?? 'Cliente no especificado',
+                    'apellido' => $trabajo->cliente->apellido ?? '',
+                    'email' => $trabajo->cliente->email ?? null,
+                    'telefono' => $trabajo->cliente->telefono ?? null,
+                    'direccion' => $trabajo->cliente->direccion ?? null,
+                ],
+                'estado' => [
+                    'id' => $trabajo->estado->id ?? 0,
+                    'nombre' => $trabajo->estado->nombre ?? 'Estado no especificado',
+                ],
+                'estadoPago' => [
+                    'id' => $trabajo->estadoPago->id ?? 0,
+                    'nombre' => $trabajo->estadoPago->nombre ?? 'Estado de pago no especificado',
+                ],
+                'responsable' => $trabajo->responsable ? [
+                    'id' => $trabajo->responsable->id ?? 0,
+                    'nombre' => $trabajo->responsable->nombre ?? 'No asignado',
+                    'apellido' => $trabajo->responsable->apellidoPaterno ?? '',
+                    'rol' => $trabajo->responsable->rol ? $trabajo->responsable->rol->nombre : 'Sin rol'
+                ] : null,
+                'servicios' => $servicios,
+                'totalTrabajo' => $totalTrabajo,
+                'saldo' => $saldo,
+                'pagado' => $totalPagado,
             ];
         });
         
@@ -81,7 +159,7 @@ class RegistrarTrabajoController extends Controller
         $estadosTrabajo = EstadosTrabajo::all();
         $estadosPago = EstadoPago::all();
         
-        // Debug: Log de datos que se envían a Inertia
+        // Preparar datos para Inertia
         $datosParaInertia = [
             'trabajos' => $trabajosSerializados,
             'clientes' => $clientes,
@@ -89,11 +167,11 @@ class RegistrarTrabajoController extends Controller
             'estadosPago' => $estadosPago,
         ];
         
-        Log::info('Datos que se envían a Inertia:', [
+        Log::info('📤 Enviando datos a Inertia:', [
             'trabajos_count' => $trabajosSerializados->count(),
-            'primer_trabajo_pagos' => $trabajosSerializados->first() ? $trabajosSerializados->first()['pagos'] : 'NO HAY TRABAJOS',
-            'primer_pago_estado' => $trabajosSerializados->first() && $trabajosSerializados->first()['pagos']->first() ? 
-                $trabajosSerializados->first()['pagos']->first()['estadoPago'] : 'NO HAY ESTADO'
+            'clientes_count' => $clientes->count(),
+            'estados_trabajo_count' => $estadosTrabajo->count(),
+            'estados_pago_count' => $estadosPago->count()
         ]);
         
         return Inertia::render('RegistrarTrabajos/Index', $datosParaInertia);
@@ -109,6 +187,12 @@ class RegistrarTrabajoController extends Controller
         $estadosTrabajo = EstadosTrabajo::all();
         $estadosPago = EstadoPago::all();
         
+        // Obtener usuarios activos para asignación de responsables
+        $usuarios = Usuarios::where('estado', true)
+            ->with('rol')
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'estado', 'idRol']);
+        
         // Si viene un cliente_id, obtener la información del cliente
         $clientePreSeleccionado = null;
         if ($request->has('cliente_id')) {
@@ -118,6 +202,7 @@ class RegistrarTrabajoController extends Controller
         return Inertia::render('RegistrarTrabajos/Create', [
             'clientes' => $clientes,
             'servicios' => $servicios,
+            'usuarios' => $usuarios, // Agregar lista de usuarios
             'estadosTrabajo' => $estadosTrabajo,
             'estadosPago' => $estadosPago,
             'clientePreSeleccionado' => $clientePreSeleccionado,
@@ -132,15 +217,19 @@ class RegistrarTrabajoController extends Controller
         // Log para debugging
         Log::info('Datos recibidos en store:', $request->all());
         Log::info('Campo idEstadoPago recibido:', ['idEstadoPago' => $request->input('idEstadoPago')]);
+        Log::info('Campo fechaEntrega recibido:', ['fechaEntrega' => $request->input('fechaEntrega')]);
         
         // Validar datos del formulario
         $validator = Validator::make($request->all(), [
             'cliente' => 'required|exists:clientes,id',
-            'servicio' => 'required|exists:servicios,id',
-            'detalles.cantidad' => 'required|integer|min:1',
+            'servicios' => 'required|array|min:1',
+            'servicios.*.idServicio' => 'required|exists:servicios,id',
+            'servicios.*.cantidad' => 'required|integer|min:1',
+            'servicios.*.descuento' => 'nullable|numeric|min:0',
+            'idResponsable' => 'nullable|exists:usuarios,id',
             'fechaEntrega' => 'required|date',
             'estadoTrabajo' => 'required|exists:estados_trabajo,id',
-            'aCuenta' => 'required|numeric|min:0', // Cambiar a 'required' para aceptar 0
+            'aCuenta' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -157,54 +246,74 @@ class RegistrarTrabajoController extends Controller
                 Log::info('Creando trabajo...');
                 $trabajo = Trabajos::create([
                     'idCliente' => $request->cliente,
-                    'idServicio' => $request->servicio,
-                    'idUsuario' => 1, // Usuario por defecto
+                    'idUsuario' => Auth::id(), // Usuario que registra (sesión actual)
+                    'idResponsable' => $request->idResponsable, // Usuario responsable del trabajo
                     'fechaRegistro' => now(),
                     'fechaEntrega' => $request->fechaEntrega,
                     'idEstado' => $request->estadoTrabajo,
                 ]);
                 Log::info('Trabajo creado con ID: ' . $trabajo->getKey());
 
-                // 2. Crear el detalle del trabajo
-                Log::info('Creando detalle del trabajo...');
-                Log::info('Datos del detalle:', $request->detalles);
+                // 2. Calcular el total general de todos los servicios
+                $totalGeneral = 0;
+                foreach ($request->servicios as $servicioData) {
+                    $servicio = Servicios::find($servicioData['idServicio']);
+                    if ($servicio) {
+                        $subtotal = $servicio->precioReferencial * $servicioData['cantidad'];
+                        $descuento = $servicioData['descuento'] ?? 0; // Descuento como monto fijo
+                        $totalGeneral += $subtotal - $descuento;
+                    }
+                }
                 
-                $detalle = DetalleTrabajo::create([
-                    'idTrabajo' => $trabajo->getKey(),
-                    'descripcion' => $request->detalles['descripcion'] ?? null,
-                    'tamano' => $request->detalles['tamano'] ?? null,
-                    'color' => $request->detalles['color'] ?? null,
-                    'modelo' => $request->detalles['modelo'] ?? null,
-                    'cantidad' => $request->detalles['cantidad'],
-                    'tipoDocumento' => $request->detalles['tipoDocumento'] ?? null,
-                    'tipoEvento' => $request->detalles['tipoEvento'] ?? null,
-                ]);
-                Log::info('Detalle del trabajo creado con ID: ' . $detalle->getKey());
+                $saldo = $totalGeneral - $request->aCuenta;
+                Log::info("Total General: $totalGeneral, A Cuenta: {$request->aCuenta}, Saldo: $saldo");
 
-                // 3. Calcular el pago automáticamente
-                Log::info('Calculando pago...');
-                $servicio = Servicios::find($request->servicio);
-                Log::info('Servicio encontrado:', $servicio ? $servicio->toArray() : 'NO ENCONTRADO');
-                
-                $total = $servicio->precioReferencial * $request->detalles['cantidad'];
-                $saldo = $total - $request->aCuenta;
-                Log::info("Total: $total, A Cuenta: {$request->aCuenta}, Saldo: $saldo");
+                // Los campos de pago se manejan en la tabla pagos, no en trabajos
 
-                // 4. Determinar el estado del pago
+                // 3. Determinar el estado del pago
                 $estadoPago = $this->determinarEstadoPago($saldo, $request->aCuenta);
                 Log::info('Estado del pago determinado: ' . $estadoPago);
-                Log::info('Estado del pago del formulario: ' . $request->input('idEstadoPago'));
 
-                // 5. Crear el pago
+                // 4. Crear el pago
                 Log::info('Creando pago...');
                 $pago = Pagos::create([
                     'idTrabajo' => $trabajo->getKey(),
-                    'total' => $total,
+                    'total' => $totalGeneral,
                     'aCuenta' => $request->aCuenta,
                     'saldo' => $saldo,
-                    'idEstadoPago' => $request->input('idEstadoPago') ?: $estadoPago, // Usar el del formulario o el calculado
+                    'idEstadoPago' => $estadoPago
                 ]);
-                Log::info('Pago creado con ID: ' . $pago->getKey() . ' y estado: ' . $pago->idEstadoPago);
+                Log::info('✅ Pago creado exitosamente:', [
+                    'idPago' => $pago->getKey(),
+                    'idTrabajo' => $trabajo->getKey(),
+                    'total' => $totalGeneral,
+                    'aCuenta' => $request->aCuenta,
+                    'saldo' => $saldo,
+                    'idEstadoPago' => $estadoPago
+                ]);
+                
+                // 5. Crear los detalles del trabajo para cada servicio
+                foreach ($request->servicios as $servicioData) {
+                    Log::info('Creando detalle para servicio:', $servicioData);
+                    
+                    $detalle = DetalleTrabajo::create([
+                        'idTrabajo' => $trabajo->getKey(),
+                        'idServicio' => $servicioData['idServicio'],
+                        'idPago' => $pago->getKey(),
+                        'descripcion' => $servicioData['detalles']['descripcion'] ?? null,
+                        'tamano' => $servicioData['detalles']['tamano'] ?? null,
+                        'color' => $servicioData['detalles']['color'] ?? null,
+                        'modelo' => $servicioData['detalles']['modelo'] ?? null,
+                        'cantidad' => $servicioData['cantidad'],
+                        'descuento' => $servicioData['descuento'] ?? 0,
+                        'tipoDocumento' => $servicioData['detalles']['tipoDocumento'] ?? null,
+                        'tipoEvento' => $servicioData['detalles']['tipoEvento'] ?? null,
+                    ]);
+                    Log::info('Detalle del trabajo creado con ID: ' . $detalle->getKey());
+                }
+                
+                // 6. Actualizar el trabajo con el estado del pago
+                $trabajo->update(['idEstadoPago' => $request->input('idEstadoPago') ?: $estadoPago]);
                 
                 Log::info('✅ Transacción completada exitosamente');
             });
@@ -229,52 +338,99 @@ class RegistrarTrabajoController extends Controller
     {
         $trabajo = Trabajos::with([
             'cliente',
-            'servicio', 
-            'pagos.estadoPago',
-            'estado'
+            'detallesTrabajo.servicio', 
+            'detallesTrabajo.pago',
+            'estado',
+            'estadoPago',
+            'usuario',
+            'responsable'
         ])->where('slug', $slug)->firstOrFail();
 
-        // Cargar el detalle del trabajo de manera explícita
-        $detalleTrabajo = DetalleTrabajo::where('idTrabajo', $trabajo->id)->first();
+        // Crear un array estructurado para el frontend
+        $trabajoData = [
+            'id' => $trabajo->id,
+            'slug' => $trabajo->slug,
+            'idCliente' => $trabajo->idCliente,
+            'idResponsable' => $trabajo->idResponsable,
+            'fechaRegistro' => $trabajo->fechaRegistro,
+            'fechaEntrega' => $trabajo->fechaEntrega,
+            'idEstado' => $trabajo->idEstado,
+            'idEstadoPago' => $trabajo->idEstadoPago,
+            'cliente' => $trabajo->cliente ? [
+                'id' => $trabajo->cliente->id,
+                'nombre' => $trabajo->cliente->nombre,
+                'apellido' => $trabajo->cliente->apellido,
+                'telefono' => $trabajo->cliente->telefono,
+            ] : null,
+            'responsable' => $trabajo->responsable ? [
+                'id' => $trabajo->responsable->id,
+                'nombre' => $trabajo->responsable->nombre,
+                'apellidoPaterno' => $trabajo->responsable->apellidoPaterno,
+                'apellidoMaterno' => $trabajo->responsable->apellidoMaterno,
+                'rol' => $trabajo->responsable->rol ? $trabajo->responsable->rol->nombre : 'Sin rol'
+            ] : null,
+            'estado' => $trabajo->estado ? [
+                'id' => $trabajo->estado->id,
+                'nombre' => $trabajo->estado->nombre
+            ] : null,
+            'estadoPago' => $trabajo->estadoPago ? [
+                'id' => $trabajo->estadoPago->id,
+                'nombre' => $trabajo->estadoPago->nombre
+            ] : null,
+            'detallesTrabajo' => $trabajo->detallesTrabajo ? $trabajo->detallesTrabajo->map(function($detalle) {
+                return [
+                    'id' => $detalle->id,
+                    'idServicio' => $detalle->idServicio,
+                    'cantidad' => $detalle->cantidad,
+                    'descuento' => $detalle->descuento ?? 0,
+                    'descripcion' => $detalle->descripcion,
+                    'tamano' => $detalle->tamano,
+                    'color' => $detalle->color,
+                    'modelo' => $detalle->modelo,
+                    'tipoDocumento' => $detalle->tipoDocumento,
+                    'tipoEvento' => $detalle->tipoEvento,
+                    'servicio' => $detalle->servicio ? [
+                        'id' => $detalle->servicio->id,
+                        'nombreServicio' => $detalle->servicio->nombreServicio,
+                        'precioReferencial' => $detalle->servicio->precioReferencial
+                    ] : null,
+                    'pago' => $detalle->pago ? [
+                        'id' => $detalle->pago->id,
+                        'monto' => $detalle->pago->monto,
+                        'aCuenta' => $detalle->pago->aCuenta
+                    ] : null
+                ];
+            })->toArray() : []
+        ];
         
-        // Cargar el estado del pago de manera explícita
-        $pagos = $trabajo->pagos;
-        $pagosData = [];
-        if ($pagos && $pagos->count() > 0) {
-            foreach ($pagos as $pago) {
-                $pagoArray = $pago->toArray();
-                if ($pago->idEstadoPago) {
-                    $estadoPago = EstadoPago::find($pago->idEstadoPago);
-                    $pagoArray['estadoPago'] = $estadoPago ? $estadoPago->toArray() : null;
-                }
-                $pagosData[] = $pagoArray;
-            }
-        }
-        
-        // Crear un array con todos los datos del trabajo
-        $trabajoData = $trabajo->toArray();
-        $trabajoData['detalleTrabajo'] = $detalleTrabajo ? $detalleTrabajo->toArray() : null;
-        $trabajoData['pagos'] = $pagosData;
-
         // Debug: Log de datos que se envían a Inertia
         Log::info('Datos del trabajo para Show:', [
             'trabajo_id' => $trabajo->id,
             'cliente' => $trabajo->cliente ? $trabajo->cliente->toArray() : 'NO HAY CLIENTE',
-            'servicio' => $trabajo->servicio ? $trabajo->servicio->toArray() : 'NO HAY SERVICIO',
-            'detalleTrabajo' => $detalleTrabajo ? $detalleTrabajo->toArray() : 'NO HAY DETALLE',
-            'pagos' => $pagosData,
+            'detallesTrabajo' => $trabajo->detallesTrabajo ? $trabajo->detallesTrabajo->toArray() : 'NO HAY DETALLES',
+            'estadoPago' => $trabajo->estadoPago ? $trabajo->estadoPago->toArray() : 'NO HAY ESTADO PAGO',
             'estado' => $trabajo->estado ? $trabajo->estado->toArray() : 'NO HAY ESTADO'
         ]);
 
         // Obtener otros trabajos del mismo cliente
-        $otrosTrabajosCliente = Trabajos::with(['servicio', 'detalleTrabajo'])
+        $otrosTrabajosCliente = Trabajos::with(['detallesTrabajo.servicio', 'detallesTrabajo'])
             ->where('idCliente', $trabajo->idCliente)
             ->where('id', '!=', $trabajo->id)
             ->get();
 
+        // Obtener historial de pagos
+        $historialPagos = Pagos::where('idTrabajo', $trabajo->id)
+            ->orderBy('idPago', 'desc')
+            ->get();
+
+        // Obtener estados de pago para el modal
+        $estadosPago = EstadoPago::all();
+
         return Inertia::render('RegistrarTrabajos/Show', [
             'trabajo' => $trabajoData,
             'otrosTrabajosCliente' => $otrosTrabajosCliente,
+            'historialPagos' => $historialPagos,
+            'estadosPago' => $estadosPago,
         ]);
     }
 
@@ -283,39 +439,109 @@ class RegistrarTrabajoController extends Controller
      */
     public function edit($slug)
     {
+        Log::info('🚨🚨🚨 MÉTODO EDIT INICIADO 🚨🚨🚨');
+        Log::info('🔄 MÉTODO EDIT LLAMADO - Slug:', ['slug' => $slug]);
+        
         $trabajo = Trabajos::with([
             'cliente',
-            'servicio',
-            'pagos.estadoPago',
-            'estado'
+            'detallesTrabajo.servicio',
+            'detallesTrabajo.pago',
+            'estado',
+            'estadoPago',
+            'usuario',
+            'responsable'
         ])->where('slug', $slug)->firstOrFail();
-
-        // Cargar el detalle del trabajo de manera explícita
-        $detalleTrabajo = DetalleTrabajo::where('idTrabajo', $trabajo->id)->first();
         
+        // Obtener historial de pagos
+        $historialPagos = Pagos::where('idTrabajo', $trabajo->id)
+            ->orderBy('idPago', 'desc')
+            ->get();
+
         // Crear un array con todos los datos del trabajo
         $trabajoData = $trabajo->toArray();
-        $trabajoData['detalleTrabajo'] = $detalleTrabajo ? $detalleTrabajo->toArray() : null;
 
         // Debug: Log de datos que se envían a Inertia
         Log::info('Datos del trabajo para Edit:', [
             'trabajo_id' => $trabajo->id,
             'cliente' => $trabajo->cliente ? $trabajo->cliente->toArray() : 'NO HAY CLIENTE',
-            'servicio' => $trabajo->servicio ? $trabajo->servicio->toArray() : 'NO HAY SERVICIO',
-            'detalleTrabajo' => $detalleTrabajo ? $detalleTrabajo->toArray() : 'NO HAY DETALLE',
-            'pagos' => $trabajo->pagos ? $trabajo->pagos->toArray() : 'NO HAY PAGOS',
+            'detallesTrabajo' => $trabajo->detallesTrabajo ? $trabajo->detallesTrabajo->toArray() : 'NO HAY DETALLES',
+            'estadoPago' => $trabajo->estadoPago ? $trabajo->estadoPago->toArray() : 'NO HAY ESTADO PAGO',
             'estado' => $trabajo->estado ? $trabajo->estado->toArray() : 'NO HAY ESTADO'
         ]);
+        
+        // Crear un array estructurado para el frontend
+        $trabajoData = [
+            'id' => $trabajo->id,
+            'slug' => $trabajo->slug,
+            'idCliente' => $trabajo->idCliente,
+            'idResponsable' => $trabajo->idResponsable,
+            'fechaRegistro' => $trabajo->fechaRegistro,
+            'fechaEntrega' => $trabajo->fechaEntrega,
+            'idEstado' => $trabajo->idEstado,
+            'idEstadoPago' => $trabajo->idEstadoPago,
+            'cliente' => $trabajo->cliente ? [
+                'id' => $trabajo->cliente->id,
+                'nombre' => $trabajo->cliente->nombre,
+                'apellido' => $trabajo->cliente->apellido,
+                'telefono' => $trabajo->cliente->telefono,
+            ] : null,
+            'responsable' => $trabajo->responsable ? [
+                'id' => $trabajo->responsable->id,
+                'nombre' => $trabajo->responsable->nombre,
+                'apellido' => $trabajo->responsable->apellidoPaterno,
+                'rol' => $trabajo->responsable->rol ? $trabajo->responsable->rol->nombre : 'Sin rol'
+            ] : null,
+            'estado' => $trabajo->estado ? [
+                'id' => $trabajo->estado->id,
+                'nombre' => $trabajo->estado->nombre
+            ] : null,
+            'estadoPago' => $trabajo->estadoPago ? [
+                'id' => $trabajo->estadoPago->id,
+                'nombre' => $trabajo->estadoPago->nombre
+            ] : null,
+            'detallesTrabajo' => $trabajo->detallesTrabajo ? $trabajo->detallesTrabajo->map(function($detalle) {
+                return [
+                    'id' => $detalle->id,
+                    'idServicio' => $detalle->idServicio,
+                    'cantidad' => $detalle->cantidad,
+                    'descuento' => $detalle->descuento ?? 0,
+                    'descripcion' => $detalle->descripcion,
+                    'tamano' => $detalle->tamano,
+                    'color' => $detalle->color,
+                    'modelo' => $detalle->modelo,
+                    'tipoDocumento' => $detalle->tipoDocumento,
+                    'tipoEvento' => $detalle->tipoEvento,
+                    'servicio' => $detalle->servicio ? [
+                        'id' => $detalle->servicio->id,
+                        'nombreServicio' => $detalle->servicio->nombreServicio,
+                        'precioReferencial' => $detalle->servicio->precioReferencial
+                    ] : null,
+                    'pago' => $detalle->pago ? [
+                        'id' => $detalle->pago->id,
+                        'monto' => $detalle->pago->monto,
+                        'aCuenta' => $detalle->pago->aCuenta
+                    ] : null
+                ];
+            })->toArray() : []
+        ];
 
         $clientes = Clientes::all();
         $servicios = Servicios::where('estado', true)->get();
         $estadosTrabajo = EstadosTrabajo::all();
         $estadosPago = EstadoPago::all();
+        
+        // Obtener usuarios activos para asignación de responsables
+        $responsables = Usuarios::where('estado', true)
+            ->with('rol')
+            ->orderBy('nombre')
+            ->orderBy('apellidoPaterno')
+            ->get(['id', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'estado', 'idRol']);
 
         return Inertia::render('RegistrarTrabajos/Edit', [
             'trabajo' => $trabajoData,
             'clientes' => $clientes,
             'servicios' => $servicios,
+            'usuarios' => $responsables, // Cambiado a 'usuarios' para coincidir con Edit.vue
             'estadosTrabajo' => $estadosTrabajo,
             'estadosPago' => $estadosPago,
         ]);
@@ -326,23 +552,26 @@ class RegistrarTrabajoController extends Controller
      */
     public function update(Request $request, $slug)
     {
+        Log::info('🚨🚨🚨 MÉTODO UPDATE INICIADO 🚨🚨🚨');
+        Log::info('🔄 MÉTODO UPDATE LLAMADO - Slug:', ['slug' => $slug]);
+        Log::info('🔄 Método HTTP:', ['method' => $request->method()]);
+        Log::info('🔄 URL completa:', ['url' => $request->fullUrl()]);
+        Log::info('📦 Datos recibidos:', $request->all());
+        
         $trabajo = Trabajos::where('slug', $slug)->firstOrFail();
+        Log::info('✅ Trabajo encontrado:', ['id' => $trabajo->id, 'slug' => $trabajo->slug]);
 
         $validator = Validator::make($request->all(), [
             'cliente' => 'required|exists:clientes,id',
-            'servicio' => 'required|exists:servicios,id',
+            'servicios' => 'required|array|min:1',
+            'servicios.*.idServicio' => 'required|exists:servicios,id',
+            'servicios.*.cantidad' => 'required|integer|min:1',
+            'servicios.*.descuento' => 'nullable|numeric|min:0',
+            'idResponsable' => 'nullable|exists:usuarios,id',
             'fechaEntrega' => 'required|date',
             'estadoTrabajo' => 'required|exists:estados_trabajo,id',
-            'detalles.tamano' => 'nullable|string|max:255',
-            'detalles.color' => 'nullable|string|max:255',
-            'detalles.modelo' => 'nullable|string|max:255',
-            'detalles.cantidad' => 'required|integer|min:1',
-            'detalles.tipoDocumento' => 'nullable|string|max:255',
-            'detalles.tipoEvento' => 'nullable|string|max:255',
-            'detalles.descripcion' => 'nullable|string|max:255',
             'aCuenta' => 'required|numeric|min:0',
             'idEstadoPago' => 'required|exists:estados_pago,id',
-            'comentarioCambios' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -354,60 +583,81 @@ class RegistrarTrabajoController extends Controller
                 // Actualizar trabajo
                 $trabajo->update([
                     'idCliente' => $request->input('cliente'),
-                    'idServicio' => $request->input('servicio'),
+                    'idResponsable' => $request->input('idResponsable'),
                     'fechaEntrega' => $request->input('fechaEntrega'),
                     'idEstado' => $request->input('estadoTrabajo'),
                 ]);
 
-                // Actualizar o crear detalle del trabajo
-                if ($trabajo->detalleTrabajo) {
-                    $trabajo->detalleTrabajo->update([
-                        'tamano' => $request->input('detalles.tamano'),
-                        'color' => $request->input('detalles.color'),
-                        'modelo' => $request->input('detalles.modelo'),
-                        'cantidad' => $request->input('detalles.cantidad'),
-                        'tipoDocumento' => $request->input('detalles.tipoDocumento'),
-                        'tipoEvento' => $request->input('detalles.tipoEvento'),
-                        'descripcion' => $request->input('detalles.descripcion'),
+                // Eliminar detalles existentes
+                $trabajo->detallesTrabajo()->delete();
+
+                // Calcular el total general de todos los servicios
+                $totalGeneral = 0;
+                foreach ($request->servicios as $servicioData) {
+                    $servicio = Servicios::find($servicioData['idServicio']);
+                    if ($servicio) {
+                        $subtotal = $servicio->precioReferencial * $servicioData['cantidad'];
+                        $descuento = $servicioData['descuento'] ?? 0;
+                        $totalGeneral += $subtotal - $descuento;
+                    }
+                }
+                
+                $saldo = $totalGeneral - $request->aCuenta;
+                
+                // Debug: Log de datos calculados
+                Log::info('🔍 Datos calculados en update para trabajo ' . $trabajo->id, [
+                    'totalGeneral' => $totalGeneral,
+                    'aCuenta' => $request->aCuenta,
+                    'saldo' => $saldo
+                ]);
+
+                // Los campos de pago se manejan en la tabla pagos, no en trabajos
+
+                // Determinar el estado del pago
+                $estadoPago = $this->determinarEstadoPago($saldo, $request->aCuenta);
+
+                // Actualizar o crear pago existente
+                $pagoExistente = Pagos::where('idTrabajo', $trabajo->id)->latest('idPago')->first();
+                
+                if ($pagoExistente) {
+                    // Actualizar pago existente
+                    $pagoExistente->update([
+                        'total' => $totalGeneral,
+                        'aCuenta' => $request->aCuenta,
+                        'saldo' => $saldo,
                     ]);
+                    $pago = $pagoExistente;
+                    Log::info('✅ Pago existente actualizado para trabajo ' . $trabajo->id);
                 } else {
+                    // Crear nuevo pago si no existe
+                    $pago = Pagos::create([
+                        'idTrabajo' => $trabajo->id,
+                        'total' => $totalGeneral,
+                        'aCuenta' => $request->aCuenta,
+                        'saldo' => $saldo,
+                    ]);
+                    Log::info('✅ Nuevo pago creado para trabajo ' . $trabajo->id);
+                }
+
+                // Crear los nuevos detalles del trabajo
+                foreach ($request->servicios as $servicioData) {
                     DetalleTrabajo::create([
                         'idTrabajo' => $trabajo->id,
-                        'tamano' => $request->input('detalles.tamano'),
-                        'color' => $request->input('detalles.color'),
-                        'modelo' => $request->input('detalles.modelo'),
-                        'cantidad' => $request->input('detalles.cantidad'),
-                        'tipoDocumento' => $request->input('detalles.tipoDocumento'),
-                        'tipoEvento' => $request->input('detalles.tipoEvento'),
-                        'descripcion' => $request->input('detalles.descripcion'),
+                        'idServicio' => $servicioData['idServicio'],
+                        'idPago' => $pago->id,
+                        'descripcion' => $servicioData['detalles']['descripcion'] ?? null,
+                        'tamano' => $servicioData['detalles']['tamano'] ?? null,
+                        'color' => $servicioData['detalles']['color'] ?? null,
+                        'modelo' => $servicioData['detalles']['modelo'] ?? null,
+                        'cantidad' => $servicioData['cantidad'],
+                        'descuento' => $servicioData['descuento'] ?? 0,
+                        'tipoDocumento' => $servicioData['detalles']['tipoDocumento'] ?? null,
+                        'tipoEvento' => $servicioData['detalles']['tipoEvento'] ?? null,
                     ]);
                 }
-
-                // Calcular total y saldo
-                $servicio = Servicios::find($request->input('servicio'));
-                $cantidad = $request->input('detalles.cantidad');
-                $total = $servicio->precioReferencial * $cantidad;
-                $aCuenta = $request->input('aCuenta');
-                $saldo = $total - $aCuenta;
-
-                // Actualizar o crear pago
-                if ($trabajo->pagos->count() > 0) {
-                    $pago = $trabajo->pagos->first();
-                    $pago->update([
-                        'total' => $total,
-                        'aCuenta' => $aCuenta,
-                        'saldo' => $saldo,
-                        'idEstadoPago' => $request->input('idEstadoPago') ?: $this->determinarEstadoPago($aCuenta, $saldo),
-                    ]);
-                } else {
-                    Pagos::create([
-                        'idTrabajo' => $trabajo->id,
-                        'total' => $total,
-                        'aCuenta' => $aCuenta,
-                        'saldo' => $saldo,
-                        'idEstadoPago' => $request->input('idEstadoPago') ?: $this->determinarEstadoPago($aCuenta, $saldo),
-                    ]);
-                }
+                
+                // Actualizar el estado del pago en el trabajo
+                $trabajo->update(['idEstadoPago' => $request->input('idEstadoPago') ?: $estadoPago]);
 
                 // Generar nuevo slug si es necesario
                 $trabajo->generateSlug();
@@ -449,6 +699,71 @@ class RegistrarTrabajoController extends Controller
             Log::error('Stack trace: ' . $e->getTraceAsString());
             
             return back()->withErrors(['error' => 'Error al eliminar el trabajo: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Agregar una cuota a un trabajo existente
+     */
+    public function agregarCuota(Request $request, $id)
+    {
+        try {
+            $trabajo = Trabajos::findOrFail($id);
+            
+            // Validar el monto de la cuota
+            $request->validate([
+                'monto' => 'required|numeric|min:0.01',
+                'nuevoEstadoPago' => 'nullable|exists:estados_pago,id'
+            ]);
+            
+            $montoCuota = $request->monto;
+            
+            // Verificar que el monto no exceda el saldo pendiente
+            if ($montoCuota > $trabajo->saldo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El monto de la cuota no puede exceder el saldo pendiente'
+                ], 400);
+            }
+            
+            // Actualizar el trabajo
+            // Obtener el último pago para calcular los nuevos valores
+            $ultimoPago = $trabajo->pagos()->latest('idPago')->first();
+            $totalTrabajo = $ultimoPago ? $ultimoPago->total : 0;
+            $nuevoACuenta = ($ultimoPago ? $ultimoPago->aCuenta : 0) + $montoCuota;
+            $nuevoSaldo = $totalTrabajo - $nuevoACuenta;
+            
+            // Cambiar estado si se especifica
+            if ($request->nuevoEstadoPago) {
+                $trabajo->idEstadoPago = $request->nuevoEstadoPago;
+                $trabajo->save();
+            }
+            
+            // Crear registro en la tabla pagos para historial
+            Pagos::create([
+                'idTrabajo' => $trabajo->id,
+                'total' => $totalTrabajo,
+                'aCuenta' => $nuevoACuenta,
+                'saldo' => $nuevoSaldo,
+                'idEstadoPago' => $request->nuevoEstadoPago ?: $trabajo->idEstadoPago
+            ]);
+            
+            // Cargar relaciones para la respuesta
+            $trabajo->load(['cliente', 'estadoPago', 'responsable']);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Cuota procesada exitosamente',
+                'trabajo' => $trabajo
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al procesar cuota: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la cuota: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

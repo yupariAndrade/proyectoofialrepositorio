@@ -13,18 +13,22 @@ return new class extends Migration
     {
         Schema::create('usuarios', function (Blueprint $table) {
             $table->id('id');
-            $table->string('nombre', 100);
-            $table->string('apellidoPaterno', 100)->nullable();
-            $table->string('apellidoMaterno', 100)->nullable();
+            $table->string('nombre', 50);
+            $table->string('apellidoPaterno', 50)->nullable();
+            $table->string('apellidoMaterno', 50)->nullable();
             $table->string('ci', 20)->unique()->nullable();
-            $table->string('telefono', 20)->nullable();
-            $table->string('direccion', 255)->nullable();
+            $table->string('telefono', 20)->unique()->nullable();
+            $table->string('direccion', 50)->nullable();
             $table->string('email', 150)->unique()->nullable();
+            $table->string('password')->nullable(); // Campo password agregado
             $table->date('fechaIngreso')->nullable();
             $table->date('fechaFinal')->nullable();
             $table->boolean('estado');
             $table->foreignId('idRol')->constrained('roles');
             $table->timestamps();
+            
+            // Índice compuesto para evitar nombres completos duplicados
+            $table->unique(['nombre', 'apellidoPaterno', 'apellidoMaterno'], 'usuarios_nombre_completo_unique');
         });
     }
 

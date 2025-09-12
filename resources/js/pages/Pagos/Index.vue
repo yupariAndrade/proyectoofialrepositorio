@@ -253,3 +253,12 @@ const getEstadoColor = (estadoNombre) => {
 
 
 
+
+
+
+
+
+
+
+
+

@@ -1,22 +1,14 @@
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppContent from '@/components/AppContent.vue';
 
-interface EstadoTrabajo {
-    id: number;
-    nombre: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface Props {
-    estados: EstadoTrabajo[];
-}
-
-const props = defineProps<Props>();
+// Props
+const props = defineProps({
+    estados: Array
+});
 
 // Estados reactivos
 const searchTerm = ref('');
@@ -32,7 +24,7 @@ const filteredEstados = computed(() => {
 });
 
 // Funciones
-const deleteEstado = (id: number) => {
+const deleteEstado = (id) => {
     if (confirm('¿Estás seguro de que quieres eliminar este estado de trabajo?')) {
         router.delete(`/estados-trabajo/${id}`);
     }
@@ -43,7 +35,7 @@ const generateReport = () => {
     alert('Función de reporte en desarrollo');
 };
 
-const getEstadoColor = (nombre: string) => {
+const getEstadoColor = (nombre) => {
     const estado = nombre.toLowerCase();
     if (estado.includes('pendiente') || estado.includes('en proceso')) return 'amber';
     if (estado.includes('completado') || estado.includes('finalizado')) return 'green';
@@ -52,7 +44,7 @@ const getEstadoColor = (nombre: string) => {
     return 'purple';
 };
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'short',
@@ -200,6 +192,8 @@ const formatDate = (dateString: string) => {
         </AppContent>
     </AppShell>
 </template>
+
+
 
 
 

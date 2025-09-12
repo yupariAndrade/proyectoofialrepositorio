@@ -27,12 +27,28 @@ export type AppPageProps<T extends Record<string, unknown> = Record<string, unkn
 
 export interface User {
     id: number;
-    name: string;
-    email: string;
-    avatar?: string;
-    email_verified_at: string | null;
+    nombre: string;
+    apellidoPaterno: string | null;
+    apellidoMaterno: string | null;
+    ci: string | null;
+    telefono: string | null;
+    direccion: string | null;
+    email: string | null;
+    password: string | null;
+    fechaIngreso: string | null;
+    fechaFinal: string | null;
+    estado: boolean;
+    idRol: number;
     created_at: string;
     updated_at: string;
+    rol?: {
+        id: number;
+        nombre: string;
+    };
+    isAdmin?: boolean;
+    isEmpleado?: boolean;
+    isGerente?: boolean;
+    isEncargado?: boolean;
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;

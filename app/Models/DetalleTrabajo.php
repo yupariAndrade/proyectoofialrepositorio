@@ -15,11 +15,14 @@ class DetalleTrabajo extends Model
 
     protected $fillable = [
         'idTrabajo',
+        'idServicio',
+        'idPago',
         'descripcion',
         'tamano',
         'color',
         'modelo',
         'cantidad',
+        'descuento',
         'tipoDocumento',
         'tipoEvento',
     ];
@@ -30,5 +33,17 @@ class DetalleTrabajo extends Model
     public function trabajo()
     {
         return $this->belongsTo(Trabajos::class, 'idTrabajo');
+    }
+
+    // 🔗 Relación: Cada detalle pertenece a un servicio
+    public function servicio()
+    {
+        return $this->belongsTo(Servicios::class, 'idServicio');
+    }
+
+    // 🔗 Relación: Cada detalle pertenece a un pago
+    public function pago()
+    {
+        return $this->belongsTo(Pagos::class, 'idPago');
     }
 }

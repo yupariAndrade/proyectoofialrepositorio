@@ -14,6 +14,18 @@
         </div>
       </header>
 
+      <!-- Success Message -->
+      <div v-if="successMessage" class="px-8 py-4">
+        <div class="max-w-7xl mx-auto">
+          <div class="bg-green-500/20 border border-green-500/30 rounded-lg p-4 flex items-center">
+            <svg class="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="text-green-400 font-medium">{{ successMessage }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Main Content Area -->
       <main class="flex-1 overflow-y-auto p-8">
         <div class="max-w-7xl mx-auto">
@@ -72,67 +84,179 @@
                   </div>
                 </div>
 
-                <!-- Sección Servicio -->
+                <!-- Sección Servicios -->
                 <div class="bg-[#0c1d3a]/70 p-6 rounded-lg border border-white/10">
-                  <h3 class="text-lg font-semibold mb-4 text-white">Servicio</h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex justify-between items-center mb-4">
                     <div>
-                      <label class="block text-sm font-medium text-white mb-2">Tipo de Servicio *</label>
-                      <select 
-                        v-model="form.servicio" 
-                        @change="onServicioChange"
-                        class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
-                        required
-                      >
-                        <option value="">Seleccionar servicio</option>
-                        <option v-for="servicio in servicios" :key="servicio.id" :value="servicio.id">
-                          {{ servicio.nombreServicio }} - {{ servicio.precioReferencial }} Bs
-                        </option>
-                      </select>
+                      <h3 class="text-lg font-semibold text-white">Servicios</h3>
+                      <p class="text-sm text-cyan-300 mt-1">
+                        💡 El descuento se aplica por unidad. Ej: Si una tarjeta cuesta 4.00 Bs. y quieres cobrar 3.20 Bs., ingresa 0.80 Bs. de descuento
+                      </p>
                     </div>
-                    <div>
-                      <label class="block text-sm font-medium text-white mb-2">Precio Unitario</label>
-                      <input 
-                        type="text" 
-                        :value="servicioSeleccionado?.precioReferencial || ''" 
-                        disabled
-                        class="w-full bg-[#0a192f]/50 text-white border border-white/20 rounded-md shadow-md"
-                      />
+                    <button 
+                      type="button"
+                      @click="agregarOtroServicio"
+                      class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                    >
+                      ➕ Agregar Otro Servicio
+                    </button>
+                  </div>
+                  
+                  <div v-for="(servicio, index) in form.servicios" :key="index" class="mb-6 p-4 bg-[#0a192f]/50 rounded-lg border border-white/10">
+                    <div class="flex justify-between items-center mb-4">
+                      <h4 class="text-md font-medium text-white">Servicio {{ index + 1 }}</h4>
+                      <button 
+                        v-if="form.servicios.length >= 2"
+                        type="button"
+                        @click="eliminarServicio(index)"
+                        class="text-red-400 hover:text-red-300 text-sm"
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label class="block text-sm font-medium text-white mb-2">Tipo de Servicio *</label>
+                        <select 
+                          v-model="servicio.idServicio"
+                          class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
+                          required
+                        >
+                          <option value="">Seleccionar servicio</option>
+                          <option v-for="serv in servicios" :key="serv.id" :value="serv.id">
+                            {{ serv.nombreServicio }} - {{ serv.precioReferencial }} Bs
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-white mb-2">Cantidad *</label>
+                        <input 
+                          v-model="servicio.cantidad"
+                          type="number" 
+                          min="1"
+                          class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-white mb-2">Descuento (Bs.)</label>
+                        <input 
+                          v-model="servicio.descuento"
+                          type="number" 
+                          min="0"
+                          :max="obtenerServicioInfo(servicio.idServicio)?.precioReferencial || 0"
+                          step="0.01"
+                          class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
+                          placeholder="0.00"
+                          @input="validarDescuento(servicio)"
+                        />
+                        <p v-if="servicio.descuento >= (obtenerServicioInfo(servicio.idServicio)?.precioReferencial || 0)" class="text-red-400 text-xs mt-1">
+                          El descuento no puede ser mayor o igual al precio unitario
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label class="block text-sm font-medium text-white mb-2">Precio Unitario</label>
+                        <input 
+                          type="text" 
+                          :value="obtenerServicioInfo(servicio.idServicio)?.precioReferencial || ''" 
+                          disabled
+                          class="w-full bg-[#0a192f]/50 text-white border border-white/20 rounded-md shadow-md"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-white mb-2">Precio Final por Unidad</label>
+                        <input 
+                          type="text" 
+                          :value="calcularPrecioFinalPorUnidad(servicio).toFixed(2) + ' Bs'" 
+                          disabled
+                          class="w-full bg-[#0a192f]/50 text-white border border-white/20 rounded-md shadow-md"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-white mb-2">Subtotal</label>
+                        <input 
+                          type="text" 
+                          :value="calcularSubtotal(servicio).toFixed(2) + ' Bs'" 
+                          disabled
+                          class="w-full bg-[#0a192f]/80 text-white border border-white/20 rounded-md shadow-md"
+                        />
+                      </div>
+                    </div>
+                    
+                    <!-- Detalles específicos del servicio -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-white/90">
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Tamaño</label>
+                        <input v-model="servicio.detalles.tamano" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Color</label>
+                        <input v-model="servicio.detalles.color" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Modelo</label>
+                        <input v-model="servicio.detalles.modelo" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Tipo de Documento</label>
+                        <input v-model="servicio.detalles.tipoDocumento" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Tipo de Evento</label>
+                        <input v-model="servicio.detalles.tipoEvento" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
+                      </div>
+                      <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-2">Descripción</label>
+                        <textarea v-model="servicio.detalles.descripcion" rows="3" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400"></textarea>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Sección Detalles del Trabajo -->
+                <!-- Sección Asignación de Responsables -->
                 <div class="bg-[#0c1d3a]/70 p-6 rounded-lg border border-white/10">
-                  <h3 class="text-lg font-semibold mb-4 text-white">Detalles del Trabajo</h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-white/90">
+                  <h3 class="text-lg font-semibold mb-4 text-white">👥 Asignación de Responsables</h3>
+                  <p class="text-sm text-gray-400 mb-4">💡 <strong>Opcional:</strong> Puedes asignar un responsable ahora o hacerlo más tarde desde la edición del trabajo.</p>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium mb-2">Tamaño</label>
-                      <input v-model="form.detalles.tamano" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
+                      <label class="block text-sm font-medium mb-2 text-white">
+                        Responsable Principal 
+                        <span class="text-gray-400 text-xs">(Opcional)</span>
+                      </label>
+                      <select 
+                        v-model="form.idResponsable"
+                        class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
+                      >
+                        <option value="">Sin responsable asignado</option>
+                        <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
+                          {{ usuario.nombre }} {{ usuario.apellidoPaterno }} {{ usuario.apellidoMaterno }} - {{ usuario.rol?.nombre }}
+                        </option>
+                      </select>
                     </div>
                     <div>
-                      <label class="block text-sm font-medium mb-2">Color</label>
-                      <input v-model="form.detalles.color" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium mb-2">Modelo</label>
-                      <input v-model="form.detalles.modelo" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium mb-2">Cantidad *</label>
-                      <input v-model="form.detalles.cantidad" type="number" min="1" @input="calcularTotal" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" required />
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium mb-2">Tipo de Documento</label>
-                      <input v-model="form.detalles.tipoDocumento" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium mb-2">Tipo de Evento</label>
-                      <input v-model="form.detalles.tipoEvento" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
-                    </div>
-                    <div class="md:col-span-2">
-                      <label class="block text-sm font-medium mb-2">Descripción</label>
-                      <textarea v-model="form.detalles.descripcion" rows="3" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400"></textarea>
+                      <label class="block text-sm font-medium mb-2 text-white">Información del Responsable</label>
+                      <div v-if="usuarioSeleccionado" class="p-3 bg-[#0a192f]/50 border border-white/20 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                          <div class="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">{{ usuarioSeleccionado.nombre.charAt(0) }}</span>
+                          </div>
+                          <div>
+                            <p class="font-medium text-white">
+                              {{ usuarioSeleccionado.nombre }} {{ usuarioSeleccionado.apellidoPaterno }} {{ usuarioSeleccionado.apellidoMaterno }}
+                            </p>
+                            <p class="text-sm text-cyan-400">{{ usuarioSeleccionado.rol?.nombre }}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="p-3 bg-[#0a192f]/30 border border-white/10 rounded-lg text-center">
+                        <p class="text-white/50 text-sm">No hay responsable asignado</p>
+                        <p class="text-gray-500 text-xs mt-1">Se puede asignar más tarde</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -159,44 +283,44 @@
                 </div>
 
                 <!-- Sección Pago -->
-                <div class="bg-gray-50 p-6 rounded-lg">
-                  <h3 class="text-lg font-semibold mb-4 text-gray-700">Información del Pago</h3>
+                <div class="bg-[#0c1d3a]/70 p-6 rounded-lg border border-white/10">
+                  <h3 class="text-lg font-semibold mb-4 text-white">💰 Información del Pago</h3>
                   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">Total</label>
+                      <label class="block text-sm font-medium text-white mb-2">Total</label>
                       <input 
                         type="text" 
                         :value="totalCalculado + ' Bs'" 
                         disabled
-                        class="w-full border-gray-300 rounded-md bg-gray-100"
+                        class="w-full bg-[#0a192f]/50 text-white border border-white/20 rounded-md shadow-md"
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">A Cuenta *</label>
+                      <label class="block text-sm font-medium text-white mb-2">A Cuenta *</label>
                       <input 
                         type="number" 
                         v-model="form.aCuenta"
                         min="0"
                         step="0.01"
-                        class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
                         placeholder="0.00"
                         required
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">Saldo</label>
+                      <label class="block text-sm font-medium text-white mb-2">Saldo</label>
                       <input 
                         type="text" 
                         :value="saldoCalculado + ' Bs'" 
                         disabled
-                        class="w-full border-gray-300 rounded-md bg-gray-100"
+                        class="w-full bg-[#0a192f]/50 text-white border border-white/20 rounded-md shadow-md"
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">Estado del Pago</label>
+                      <label class="block text-sm font-medium text-white mb-2">Estado del Pago</label>
                       <select 
                         v-model="form.idEstadoPago"
-                        class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
                       >
                         <option v-for="estado in estadosPago" :key="estado.id" :value="estado.id">
                           {{ estado.nombre }}
@@ -209,16 +333,6 @@
                 <!-- Botones de acción -->
                 <div class="flex justify-between space-x-4 pt-6">
                   <div class="flex space-x-4">
-                    <!-- Botón para agregar otro servicio -->
-                    <button 
-                      v-if="form.cliente"
-                      @click="agregarOtroServicio"
-                      type="button"
-                      :disabled="isSubmitting || !puedeGuardar"
-                      class="bg-green-500 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-2 px-4 rounded"
-                    >
-                      ➕ Agregar Otro Servicio
-                    </button>
                     <Link :href="route('registrar-trabajos')" class="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded">Cancelar</Link>
                   </div>
                   <button type="submit" :disabled="isSubmitting" class="bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-bold py-2 px-4 rounded">
@@ -238,14 +352,23 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { Link, useForm, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
+
+// Obtener la página actual
+const page = usePage()
+
+// Computed para el mensaje de éxito
+const successMessage = computed(() => {
+  return page.props.flash?.success || null
+})
 
 // Props
 const props = defineProps({
   clientes: Array,
   servicios: Array,
+  usuarios: Array, // Lista de usuarios para asignar responsables
   estadosTrabajo: Array,
   estadosPago: Array,
   clientePreSeleccionado: Object, // Nuevo prop para cliente pre-seleccionado
@@ -254,16 +377,22 @@ const props = defineProps({
 // Estado del formulario
 const form = useForm({
   cliente: props.clientePreSeleccionado?.id || '',
-  servicio: '',
-  detalles: {
-    tamano: '',
-    color: '',
-    modelo: '',
-    cantidad: 1,
-    tipoDocumento: '',
-    tipoEvento: '',
-    descripcion: '',
-  },
+  servicios: [
+    {
+      idServicio: '',
+      cantidad: 1,
+      descuento: 0.00,
+      detalles: {
+        tamano: '',
+        color: '',
+        modelo: '',
+        tipoDocumento: '',
+        tipoEvento: '',
+        descripcion: '',
+      }
+    }
+  ],
+  idResponsable: '', // Campo para asignación de responsable
   fechaEntrega: '',
   estadoTrabajo: 1, // Pendiente por defecto
   aCuenta: 0,
@@ -279,13 +408,16 @@ const clienteSeleccionado = computed(() => {
   return props.clientes.find(c => c.id === form.cliente)
 })
 
-const servicioSeleccionado = computed(() => {
-  return props.servicios.find(s => s.id === form.servicio)
+const totalCalculado = computed(() => {
+  let total = 0
+  form.servicios.forEach(servicio => {
+    total += calcularSubtotal(servicio)
+  })
+  return total
 })
 
-const totalCalculado = computed(() => {
-  if (!servicioSeleccionado.value || !form.detalles.cantidad) return 0
-  return servicioSeleccionado.value.precioReferencial * form.detalles.cantidad
+const usuarioSeleccionado = computed(() => {
+  return props.usuarios?.find(u => u.id === form.idResponsable)
 })
 
 const saldoCalculado = computed(() => {
@@ -299,7 +431,10 @@ const estadoPagoNombre = computed(() => {
 })
 
 const puedeGuardar = computed(() => {
-  return form.cliente && form.servicio && form.detalles.cantidad > 0 && form.fechaEntrega
+  const tieneServicios = form.servicios.some(servicio => 
+    servicio.idServicio && servicio.cantidad > 0
+  )
+  return form.cliente && tieneServicios && form.idResponsable && form.fechaEntrega
 })
 
 // Métodos
@@ -337,48 +472,62 @@ const calcularSaldo = () => {
 }
 
 const agregarOtroServicio = () => {
-  // Validación del lado del cliente
-  if (!form.cliente) {
-    alert('Por favor selecciona un cliente')
-    return
-  }
-  
-  if (!form.servicio) {
-    alert('Por favor selecciona un servicio')
-    return
-  }
-  
-  if (!form.detalles.cantidad || form.detalles.cantidad < 1) {
-    alert('Por favor ingresa una cantidad válida (mínimo 1)')
-    return
-  }
-  
-  if (!form.fechaEntrega) {
-    alert('Por favor selecciona una fecha de entrega')
-    return
-  }
-  
-  if (form.aCuenta < 0) {
-    alert('El monto a cuenta no puede ser negativo')
-    return
-  }
-  
-  isSubmitting.value = true
-  
-  // Guardar el trabajo actual y luego redirigir para agregar otro
-  form.post(route('registrar-trabajos.store'), {
-    onSuccess: () => {
-      isSubmitting.value = false
-      console.log('Trabajo registrado exitosamente, redirigiendo para agregar otro...')
-      
-      // Redirigir al formulario de crear con el cliente pre-seleccionado
-      window.location.href = route('registrar-trabajos.create', { cliente_id: form.cliente })
-    },
-    onError: (errors) => {
-      isSubmitting.value = false
-      console.error('Errores del servidor:', errors)
+  form.servicios.push({
+    idServicio: '',
+    cantidad: 1,
+    descuento: 0.00,
+    detalles: {
+      tamano: '',
+      color: '',
+      modelo: '',
+      tipoDocumento: '',
+      tipoEvento: '',
+      descripcion: '',
     }
   })
+}
+
+const eliminarServicio = (index) => {
+  if (form.servicios.length > 1) {
+    form.servicios.splice(index, 1)
+  }
+}
+
+const obtenerServicioInfo = (idServicio) => {
+  return props.servicios.find(s => s.id === idServicio)
+}
+
+const calcularPrecioFinalPorUnidad = (servicio) => {
+  const servicioInfo = obtenerServicioInfo(servicio.idServicio)
+  if (!servicioInfo) return 0
+  
+  const precioUnitario = servicioInfo.precioReferencial
+  const descuentoPorUnidad = servicio.descuento || 0
+  
+  // Calcular precio final por unidad: precio original - descuento por unidad
+  const precioFinalPorUnidad = precioUnitario - descuentoPorUnidad
+  
+  return Math.max(0, precioFinalPorUnidad) // Asegurar que no sea negativo
+}
+
+const calcularSubtotal = (servicio) => {
+  const servicioInfo = obtenerServicioInfo(servicio.idServicio)
+  if (!servicioInfo || !servicio.cantidad) return 0
+  
+  const precioFinalPorUnidad = calcularPrecioFinalPorUnidad(servicio)
+  const cantidad = servicio.cantidad
+  
+  // Calcular subtotal: precio final por unidad × cantidad
+  const subtotal = precioFinalPorUnidad * cantidad
+  
+  return Math.max(0, subtotal) // Asegurar que no sea negativo
+}
+
+const validarDescuento = (servicio) => {
+  const servicioInfo = obtenerServicioInfo(servicio.idServicio)
+  if (servicioInfo && servicio.descuento > servicioInfo.precioReferencial) {
+    servicio.descuento = servicioInfo.precioReferencial
+  }
 }
 
 const submitForm = () => {
@@ -388,15 +537,17 @@ const submitForm = () => {
     return
   }
   
-  if (!form.servicio) {
-    alert('Por favor selecciona un servicio')
+  // Validar que al menos un servicio esté seleccionado
+  const serviciosValidos = form.servicios.filter(servicio => 
+    servicio.idServicio && servicio.cantidad > 0
+  )
+  
+  if (serviciosValidos.length === 0) {
+    alert('Por favor selecciona al menos un servicio con cantidad válida')
     return
   }
   
-  if (!form.detalles.cantidad || form.detalles.cantidad < 1) {
-    alert('Por favor ingresa una cantidad válida (mínimo 1)')
-    return
-  }
+  // El responsable es opcional, no se valida
   
   if (!form.fechaEntrega) {
     alert('Por favor selecciona una fecha de entrega')

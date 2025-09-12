@@ -16,10 +16,11 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
+    // Comentado para usar AuthController personalizado en web.php
+    // Route::get('login', [AuthenticatedSessionController::class, 'create'])
+    //     ->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    // Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
@@ -52,6 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store'])
         ->middleware('throttle:6,1');
 
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
+    // Comentado para usar AuthController personalizado en web.php
+    // Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+    //     ->name('logout');
 });

@@ -20,8 +20,7 @@ class Pagos extends Model
         'idTrabajo',
         'total',
         'aCuenta', 
-        'saldo',
-        'idEstadoPago'
+        'saldo'
     ];
 
     // 🔗 Relación: Un pago pertenece a un trabajo
@@ -30,11 +29,7 @@ class Pagos extends Model
         return $this->belongsTo(Trabajos::class, 'idTrabajo');
     }
 
-    // 🔗 Relación: Un pago tiene un estado de pago
-    public function estadoPago(): BelongsTo
-    {
-        return $this->belongsTo(EstadoPago::class, 'idEstadoPago');
-    }
+
 
     /**
      * Calcular el pago y determinar el estado automáticamente

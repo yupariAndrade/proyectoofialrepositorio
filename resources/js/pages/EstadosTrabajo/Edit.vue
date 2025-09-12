@@ -17,7 +17,7 @@ const props = defineProps<Props>();
 
 const form = useForm({
     nombre: props.estado.nombre
-});
+}) as any;
 
 const submit = () => {
     form.put(`/estados-trabajo/${props.estado.id}`);
@@ -122,7 +122,3 @@ const submit = () => {
         </AppContent>
     </AppShell>
 </template>
-
-
-
-

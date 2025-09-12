@@ -2,15 +2,20 @@
   <AppShell>
     <AppSidebar />
     <AppContent>
-      <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
+      <div class="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
         <!-- Encabezado -->
-        <div class="bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-lg border-b border-white/10 py-12 px-8">
+        <div class="bg-gradient-to-r from-black/90 via-gray-900/90 to-black/90 backdrop-blur-lg border-b border-red-600/30 py-12 px-8">
           <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div>
-              <h1 class="text-4xl font-bold bg-gradient-to-r from-amber-400 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-3">🔍 Detalles del Servicio</h1>
-              <p class="text-slate-300 text-lg">Información completa del servicio fotográfico</p>
+              <h1 class="text-4xl font-bold bg-gradient-to-r from-red-500 via-white to-gray-300 bg-clip-text text-transparent mb-3">🔍 Detalles del Servicio</h1>
+              <p class="text-gray-300 text-lg">Información completa del servicio fotográfico</p>
             </div>
-            <Link :href="route('servicios')" class="bg-gradient-to-r from-slate-600/50 to-slate-700/50 text-white px-6 py-3 rounded-xl border border-white/10">Volver</Link>
+            <Link :href="route('servicios')" class="bg-gradient-to-r from-gray-700 to-gray-800 text-white px-6 py-3 rounded-xl border border-gray-600/50 hover:from-gray-800 hover:to-black transition-all">
+              <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+              Volver
+            </Link>
           </div>
         </div>
 
@@ -40,7 +45,7 @@
                   </div>
                   <div>
                     <label class="block text-sm font-semibold text-slate-400 mb-1">Estado</label>
-                    <span :class="['px-3 py-1 rounded-full text-sm font-medium', servicio?.estado ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30']">{{ servicio?.estado ? 'Activo' : 'Inactivo' }}</span>
+                    <span :class="['px-3 py-1 rounded-full text-sm font-medium', servicio?.estado ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30']">{{ servicio?.estado ? 'Disponible' : 'No disponible' }}</span>
                   </div>
                   <div class="col-span-2" v-if="servicio?.descripcion">
                     <label class="block text-sm font-semibold text-slate-400 mb-1">Descripción</label>

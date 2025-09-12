@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('trabajos', function (Blueprint $table) {
             $table->id('id');
             $table->foreignId('idCliente')->constrained('clientes');
-            $table->foreignId('idServicio')->constrained('servicios');
+            //$table->foreignId('idServicio')->constrained('servicios');
             $table->foreignId('idUsuario')->constrained('usuarios');
             $table->date('fechaRegistro');
             $table->date('fechaEntrega')->nullable();

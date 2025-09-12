@@ -4,7 +4,7 @@
     <div class="relative overflow-hidden">
       <!-- Carrusel de Fondo con Efecto Cristal -->
       <div class="absolute inset-0 z-0">
-        <ServiceCarousel v-if="servicios && servicios.length" :servicios="servicios" class="h-96" />
+        <ServiceCarousel v-if="servicios && servicios.length > 0" :servicios="servicios" class="h-96" />
       </div>
       
       <!-- Overlay con Efecto Cristal -->
@@ -22,9 +22,32 @@
           <h2 class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
             Foto Estudio EU
           </h2>
-          <p class="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+          <p class="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-6">
             Explora y gestiona servicios, usuarios y roles del estudio
           </p>
+          
+          <!-- Botón de Iniciar Sesión -->
+          <div v-if="!user" class="flex justify-center">
+            <a href="/login" class="group relative inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+              <svg class="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+              </svg>
+              Iniciar Sesión
+              <div class="absolute inset-0 bg-gradient-to-r from-purple-700 to-pink-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </a>
+          </div>
+          
+          <!-- Mensaje para usuarios autenticados -->
+          <div v-else class="flex justify-center">
+            <div class="bg-green-500/20 border border-green-500/30 rounded-full px-6 py-3">
+              <p class="text-green-300 font-medium">
+                ¡Bienvenido, {{ user?.nombre || 'Usuario' }}! 
+                <a href="/dashboard-admin" class="text-green-200 hover:text-green-100 underline ml-2">
+                  Ir al Dashboard Admin
+                </a>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -38,14 +61,14 @@
             Catálogo de Servicios
           </h3>
           
-                      <!-- Scroll Horizontal de Servicios -->
-            <div class="relative">
-              <div class="flex space-x-4 overflow-x-auto pb-6 scrollbar-hide">
-                              <div 
-                  v-for="servicio in servicios" 
-                  :key="servicio.id"
-                  class="flex-shrink-0 w-72 bg-white/10 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-                >
+                                <!-- Scroll Horizontal de Servicios -->
+          <div class="relative">
+            <div class="flex space-x-4 overflow-x-auto pb-6 scrollbar-hide">
+              <div 
+                v-for="servicio in (servicios || [])" 
+                :key="servicio.id"
+                class="flex-shrink-0 w-72 bg-white/10 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+              >
                 <div class="p-6">
                   <!-- Imagen del Servicio -->
                   <div class="w-full h-48 rounded-xl overflow-hidden mb-4">
@@ -64,9 +87,9 @@
                     
                     <!-- Estado del Servicio -->
                     <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mb-3"
-                         :class="servicio.estado ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'">
+                      :class="servicio.estado ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'">
                       <div class="w-2 h-2 rounded-full mr-2"
-                           :class="servicio.estado ? 'bg-green-400' : 'bg-red-400'"></div>
+                        :class="servicio.estado ? 'bg-green-400' : 'bg-red-400'"></div>
                       {{ servicio.estado ? 'Activo' : 'Inactivo' }}
                     </div>
                     
@@ -89,154 +112,95 @@
         </div>
       </div>
 
-      <!-- Estadísticas Principales -->
+      <!-- Información del Estudio -->
       <div class="py-12 px-6">
         <div class="max-w-6xl mx-auto">
           <h3 class="text-3xl font-bold text-white text-center mb-8">
-            Estadísticas del Sistema
+            ¿Por qué elegir Foto Estudio EU?
           </h3>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Total Servicios -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Calidad Profesional -->
             <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
               <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                </svg>
-              </div>
-              <h4 class="text-lg font-semibold text-white mb-2">Total Servicios</h4>
-              <p class="text-3xl font-bold text-blue-400">{{ stats.servicios.total }}</p>
-              <div class="flex justify-center space-x-2 mt-2">
-                <span class="text-green-400 text-sm">{{ stats.servicios.activos }} activos</span>
-                <span class="text-red-400 text-sm">{{ stats.servicios.inactivos }} inactivos</span>
-              </div>
-            </div>
-
-            <!-- Total Clientes -->
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
-              <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-              </div>
-              <h4 class="text-lg font-semibold text-white mb-2">Total Clientes</h4>
-              <p class="text-3xl font-bold text-green-400">{{ stats.clientes.total }}</p>
-            </div>
-
-            <!-- Total Trabajos -->
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
-              <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
-              </div>
-              <h4 class="text-lg font-semibold text-white mb-2">Total Trabajos</h4>
-              <p class="text-3xl font-bold text-orange-400">{{ stats.trabajos.total }}</p>
-            </div>
-
-            <!-- Ingresos del Día -->
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
-              <div class="w-16 h-16 bg-gradient-to-r from-yellow-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-                </svg>
-              </div>
-              <h4 class="text-lg font-semibold text-white mb-2">Ingresos Hoy</h4>
-              <p class="text-3xl font-bold text-yellow-400">{{ formatCurrency(stats.ingresos.hoy) }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Estados de Trabajos -->
-      <div class="py-12 px-6">
-        <div class="max-w-6xl mx-auto">
-          <h3 class="text-3xl font-bold text-white text-center mb-8">
-            Estados de Trabajos
-          </h3>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-              <div class="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </div>
-              <h4 class="text-lg font-semibold text-white mb-2">Pendientes</h4>
-              <p class="text-3xl font-bold text-yellow-400">{{ stats.trabajos.pendientes }}</p>
-            </div>
-
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-              <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-              </div>
-              <h4 class="text-lg font-semibold text-white mb-2">En Proceso</h4>
-              <p class="text-3xl font-bold text-blue-400">{{ stats.trabajos.enProceso }}</p>
-            </div>
-
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-              <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
-              <h4 class="text-lg font-semibold text-white mb-2">Completados</h4>
-              <p class="text-3xl font-bold text-green-400">{{ stats.trabajos.completados }}</p>
+              <h4 class="text-xl font-bold text-white mb-3">Calidad Profesional</h4>
+              <p class="text-white/80">Utilizamos equipos de última generación y técnicas profesionales para garantizar resultados excepcionales.</p>
             </div>
 
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-              <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            <!-- Experiencia -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
+              <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
-              <h4 class="text-lg font-semibold text-white mb-2">Cancelados</h4>
-              <p class="text-3xl font-bold text-red-400">{{ stats.trabajos.cancelados }}</p>
+              <h4 class="text-xl font-bold text-white mb-3">Años de Experiencia</h4>
+              <p class="text-white/80">Con años de experiencia en el mercado, conocemos las mejores técnicas para cada tipo de sesión fotográfica.</p>
+            </div>
+
+            <!-- Atención Personalizada -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
+              <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+              </div>
+              <h4 class="text-xl font-bold text-white mb-3">Atención Personalizada</h4>
+              <p class="text-white/80">Cada cliente es único. Trabajamos contigo para crear la sesión perfecta que refleje tu personalidad.</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Trabajos Recientes -->
+      <!-- Galería de Trabajos Destacados -->
       <div class="py-12 px-6">
         <div class="max-w-6xl mx-auto">
           <h3 class="text-3xl font-bold text-white text-center mb-8">
-            Trabajos Recientes
+            Nuestros Trabajos Destacados
           </h3>
           
-          <div class="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead class="bg-white/10">
-                  <tr>
-                    <th class="px-6 py-4 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Cliente</th>
-                    <th class="px-6 py-4 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Servicio</th>
-                    <th class="px-6 py-4 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Estado</th>
-                    <th class="px-6 py-4 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-white/10">
-                  <tr v-for="trabajo in trabajosRecientes" :key="trabajo.id" class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-white">{{ trabajo.cliente?.nombre || 'N/A' }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-white/90">{{ trabajo.servicio?.nombreServicio || 'N/A' }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                            :class="getEstadoClass(trabajo.estado?.nombre || '')">
-                        {{ trabajo.estado?.nombre || 'N/A' }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white/70">
-                      {{ formatDate(trabajo.fechaRegistro) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Trabajo 1 -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-white/15 transition-all duration-300 group">
+              <div class="h-48 bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <svg class="w-16 h-16 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div class="p-4">
+                <h4 class="text-lg font-semibold text-white mb-2">Sesión de Retratos</h4>
+                <p class="text-white/70 text-sm">Capturamos la esencia y personalidad única de cada cliente.</p>
+              </div>
+            </div>
+
+            <!-- Trabajo 2 -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-white/15 transition-all duration-300 group">
+              <div class="h-48 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                <svg class="w-16 h-16 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div class="p-4">
+                <h4 class="text-lg font-semibold text-white mb-2">Eventos Especiales</h4>
+                <p class="text-white/70 text-sm">Documentamos los momentos más importantes de tu vida.</p>
+              </div>
+            </div>
+
+            <!-- Trabajo 3 -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-white/15 transition-all duration-300 group">
+              <div class="h-48 bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                <svg class="w-16 h-16 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div class="p-4">
+                <h4 class="text-lg font-semibold text-white mb-2">Fotografía Comercial</h4>
+                <p class="text-white/70 text-sm">Ayudamos a tu negocio a destacar con imágenes profesionales.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -250,7 +214,7 @@
           </h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                         <a href="/registrar-trabajos" class="group">
+                         <a :href="user ? '/registrar-trabajos' : '/login'" class="group">
                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 group-hover:scale-105">
                 <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,10 +222,11 @@
                   </svg>
                 </div>
                 <h4 class="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">Registrar Trabajo</h4>
+                <p class="text-sm text-white/70 mt-2">{{ user ? 'Acceder ahora' : 'Inicia sesión para acceder' }}</p>
               </div>
             </a>
 
-                         <a href="/servicios" class="group">
+                         <a :href="user ? '/servicios' : '/login'" class="group">
                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 group-hover:scale-105">
                 <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -269,21 +234,23 @@
                   </svg>
                 </div>
                 <h4 class="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">Gestionar Servicios</h4>
+                <p class="text-sm text-white/70 mt-2">{{ user ? 'Acceder ahora' : 'Inicia sesión para acceder' }}</p>
               </div>
             </a>
 
-                         <a href="/clientes" class="group">
+                         <a :href="user ? '/clientes' : '/login'" class="group">
                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 group-hover:scale-105">
                 <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                   </svg>
                 </div>
                 <h4 class="text-lg font-semibold text-white group-hover:text-green-300 transition-colors">Gestionar Clientes</h4>
+                <p class="text-sm text-white/70 mt-2">{{ user ? 'Acceder ahora' : 'Inicia sesión para acceder' }}</p>
               </div>
             </a>
 
-                         <a href="/usuarios" class="group">
+              <a :href="user ? '/usuarios' : '/login'" class="group">
                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 group-hover:scale-105">
                 <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,6 +258,7 @@
                   </svg>
                 </div>
                 <h4 class="text-lg font-semibold text-white group-hover:text-orange-300 transition-colors">Gestionar Usuarios</h4>
+                <p class="text-sm text-white/70 mt-2">{{ user ? 'Acceder ahora' : 'Inicia sesión para acceder' }}</p>
               </div>
             </a>
           </div>
@@ -301,11 +269,12 @@
 </template>
 
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
+import { Head, usePage } from '@inertiajs/vue3'
 import ServiceCarousel from '@/components/ServiceCarousel.vue'
+import { computed } from 'vue'
 
 interface Props {
-  stats: {
+  stats?: {
     servicios: {
       total: number
       activos: number
@@ -331,7 +300,7 @@ interface Props {
       activos: number
     }
   }
-  trabajosRecientes: Array<{
+  trabajosRecientes?: Array<{
     id: number
     cliente?: {
       nombre: string
@@ -344,7 +313,7 @@ interface Props {
     }
     fechaRegistro: string
   }>
-  servicios: Array<{
+  servicios?: Array<{
     id: number
     nombreServicio: string
     precioReferencial: number | string
@@ -355,8 +324,14 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// Obtener datos del usuario autenticado
+const page = usePage()
+const user = computed(() => page.props.auth.user)
+
 // Debug temporal para ver los datos
 console.log('Servicios recibidos:', props.servicios)
+console.log('Props completas:', props)
+console.log('Usuario autenticado:', user.value)
 
 // Funciones auxiliares
 const formatCurrency = (amount: number) => {

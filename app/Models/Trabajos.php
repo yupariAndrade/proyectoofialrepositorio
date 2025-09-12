@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Trabajos extends Model
@@ -16,11 +17,12 @@ class Trabajos extends Model
 
     protected $fillable = [
         'idCliente',
-        'idServicio',
         'idUsuario',
+        'idResponsable',
         'fechaRegistro',
         'fechaEntrega',
         'idEstado',
+        'idEstadoPago',
         'slug',
     ];
 
@@ -48,13 +50,10 @@ class Trabajos extends Model
     public function generateSlug()
     {
         $cliente = $this->cliente;
-        $servicio = $this->servicio;
         
         $baseSlug = Str::slug(
             ($cliente ? $cliente->nombre . ' ' . $cliente->apellido : 'trabajo') . 
-            '-' . 
-            ($servicio ? $servicio->nombreServicio : 'servicio') . 
-            '-' . 
+            '-trabajo-' . 
             $this->id
         );
         
@@ -76,10 +75,10 @@ class Trabajos extends Model
         return $this->belongsTo(Clientes::class, 'idCliente');
     }
 
-    // 🔗 Relación: Un trabajo pertenece a un servicio
-    public function servicio(): BelongsTo
+    // 🔗 Relación: Un trabajo pertenece a un usuario responsable
+    public function responsable(): BelongsTo
     {
-        return $this->belongsTo(Servicios::class, 'idServicio');
+        return $this->belongsTo(Usuarios::class, 'idResponsable');
     }
 
     // 🔗 Relación: Un trabajo pertenece a un usuario
@@ -94,15 +93,40 @@ class Trabajos extends Model
         return $this->belongsTo(EstadosTrabajo::class, 'idEstado');
     }
 
-    // 🔗 Relación: Un trabajo tiene un detalle
-    public function detalleTrabajo(): HasOne
+    // 🔗 Relación: Un trabajo tiene un estado de pago
+    public function estadoPago(): BelongsTo
     {
-        return $this->hasOne(DetalleTrabajo::class, 'idTrabajo');
+        return $this->belongsTo(EstadoPago::class, 'idEstadoPago');
+    }
+
+    // 🔗 Relación: Un trabajo puede tener múltiples detalles (servicios)
+    public function detallesTrabajo(): HasMany
+    {
+        return $this->hasMany(DetalleTrabajo::class, 'idTrabajo');
     }
 
     // 🔗 Relación: Un trabajo puede tener múltiples pagos
     public function pagos()
     {
         return $this->hasMany(Pagos::class, 'idTrabajo');
+    }
+
+    // 🔗 Relación: Un trabajo tiene un servicio (para compatibilidad con código existente)
+    public function servicio()
+    {
+        return $this->hasOneThrough(
+            Servicios::class,
+            DetalleTrabajo::class,
+            'idTrabajo', // Foreign key en detalle_trabajo
+            'id', // Foreign key en servicios
+            'id', // Local key en trabajos
+            'idServicio' // Local key en detalle_trabajo
+        );
+    }
+
+    // 🔗 Configurar route model binding para usar slug
+    public function getRouteKeyName()
+    {
+        return 'slug';
     }
 }

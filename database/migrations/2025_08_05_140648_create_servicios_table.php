@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('servicios', function (Blueprint $table) {
             $table->id('id');
-            $table->string('nombreServicio', 100);
+            $table->string('nombreServicio', 50);
             $table->decimal('precioReferencial', 10, 2);
-            $table->string('descripcion', 255)->nullable();
+            $table->string('descripcion', 100)->nullable();
             $table->boolean('estado');
             $table->string('imagenReferencia', 255)->nullable();
             $table->foreignId('idUsuario')->constrained('usuarios');

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Clientes;
 use App\Models\Usuarios;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ClienteController extends Controller
@@ -18,23 +18,32 @@ class ClienteController extends Controller
 
     public function create()
     {
-        $usuarios = Usuarios::all();
-        return Inertia::render('Clientes/Create', ['usuarios' => $usuarios]);
+        // Ya no necesitamos pasar usuarios al frontend
+        return Inertia::render('Clientes/Create');
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100',
-            'apellido' => 'nullable|string|max:100',
-            'ci' => 'nullable|string|max:20',
-            'telefono' => 'nullable|string|max:20',
-            'correoElectronico' => 'nullable|email|max:150',
-            'idUsuario' => 'required|exists:usuarios,id'
-        ]);
-        if ($validator->fails()) return back()->withErrors($validator)->withInput();
-        Clientes::create($request->all());
-        return redirect()->route('clientes')->with('success', 'Cliente creado exitosamente');
+        // Obtener el usuario autenticado
+        $usuario = Auth::user();
+        
+        // Validar usando las reglas del modelo
+        $validated = $request->validate(Clientes::rules());
+        
+        // Verificar duplicados manualmente para mensajes más específicos
+        if (Clientes::existeDuplicado($validated['nombre'], $validated['apellido'], $validated['ci'])) {
+            return redirect()->back()->withInput()->withErrors([
+                'nombre' => 'Ya existe un cliente con este nombre',
+                'apellido' => 'Ya existe un cliente con este apellido',
+                'ci' => 'Ya existe un cliente con este CI'
+            ]);
+        }
+        
+        // Asignar automáticamente el usuario autenticado
+        $validated['idUsuario'] = $usuario->id;
+        
+        Clientes::create($validated);
+        return redirect()->back()->with('success', 'Cliente registrado exitosamente');
     }
 
     public function show(string $id)
@@ -46,24 +55,31 @@ class ClienteController extends Controller
     public function edit(string $id)
     {
         $cliente = Clientes::findOrFail($id);
-        $usuarios = Usuarios::all();
-        return Inertia::render('Clientes/Edit', ['cliente' => $cliente, 'usuarios' => $usuarios]);
+        // Ya no necesitamos pasar usuarios al frontend
+        return Inertia::render('Clientes/Edit', ['cliente' => $cliente]);
     }
 
     public function update(Request $request, string $id)
     {
         $cliente = Clientes::findOrFail($id);
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100',
-            'apellido' => 'nullable|string|max:100',
-            'ci' => 'nullable|string|max:20',
-            'telefono' => 'nullable|string|max:20',
-            'correoElectronico' => 'nullable|email|max:150',
-            'idUsuario' => 'required|exists:usuarios,id'
-        ]);
-        if ($validator->fails()) return back()->withErrors($validator)->withInput();
-        $cliente->update($request->all());
-        return redirect()->route('clientes')->with('success', 'Cliente actualizado exitosamente');
+        
+        // Validar usando las reglas del modelo con exclusión del ID actual
+        $validated = $request->validate(Clientes::rules($id));
+        
+        // Verificar duplicados manualmente para mensajes más específicos
+        if (Clientes::existeDuplicado($validated['nombre'], $validated['apellido'], $validated['ci'], $id)) {
+            return redirect()->back()->withInput()->withErrors([
+                'nombre' => 'Ya existe un cliente con este nombre',
+                'apellido' => 'Ya existe un cliente con este apellido',
+                'ci' => 'Ya existe un cliente con este CI'
+            ]);
+        }
+        
+        // Mantener el usuario original que creó el cliente
+        $validated['idUsuario'] = $cliente->idUsuario;
+        
+        $cliente->update($validated);
+        return redirect()->back()->with('success', 'Cliente actualizado exitosamente');
     }
 
     public function destroy(string $id)

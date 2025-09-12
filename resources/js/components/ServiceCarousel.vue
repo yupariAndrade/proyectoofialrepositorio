@@ -10,12 +10,26 @@
         >
           <div class="w-full h-full">
             <img
+              v-if="item.imagenReferencia"
               :src="getImageUrl(item.imagenReferencia)"
               :alt="item.nombreServicio"
               class="w-full h-full object-cover select-none"
               :class="[ 'transition-transform duration-[1800ms] ease-in-out', isZoomed ? 'scale-110' : 'scale-100' ]"
               draggable="false"
             />
+            <!-- Imagen de placeholder cuando no hay imagen -->
+            <div
+              v-else
+              class="w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 flex items-center justify-center"
+              :class="[ 'transition-transform duration-[1800ms] ease-in-out', isZoomed ? 'scale-110' : 'scale-100' ]"
+            >
+              <div class="text-center text-white">
+                <svg class="w-16 h-16 mx-auto mb-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <p class="text-lg font-semibold">{{ item.nombreServicio }}</p>
+              </div>
+            </div>
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
             <div class="absolute bottom-0 left-0 right-0 p-6 text-white/90 backdrop-blur-[2px]">
               <div class="flex items-end justify-between">
