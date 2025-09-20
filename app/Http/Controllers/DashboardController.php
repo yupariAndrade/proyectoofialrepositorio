@@ -56,43 +56,17 @@ class DashboardController extends Controller
         $usuariosActivos = Usuarios::where('estado', true)->count();
 
         // Trabajos recientes (últimos 5)
-        $trabajosRecientes = Trabajos::with(['cliente', 'detalleTrabajo.servicio', 'estado', 'responsable'])
+        $trabajosRecientes = Trabajos::with(['cliente', 'detallesTrabajo.servicio', 'estado', 'responsable'])
             ->latest()
             ->take(5)
             ->get();
 
-        // Servicios para el carrusel (todos los activos, con o sin imagen)
-        $servicios = Servicios::where('estado', true)
+        // Servicios para el carrusel (con imágenes)
+        $servicios = Servicios::whereNotNull('imagenReferencia')
+            ->where('estado', true)
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get(['id', 'nombreServicio', 'precioReferencial', 'imagenReferencia', 'estado']);
-
-        // Si no hay servicios, crear algunos de ejemplo
-        if ($servicios->isEmpty()) {
-            $servicios = collect([
-                (object) [
-                    'id' => 1,
-                    'nombreServicio' => 'Sesión de Retratos',
-                    'precioReferencial' => 150.00,
-                    'imagenReferencia' => null,
-                    'estado' => true
-                ],
-                (object) [
-                    'id' => 2,
-                    'nombreServicio' => 'Fotografía de Eventos',
-                    'precioReferencial' => 300.00,
-                    'imagenReferencia' => null,
-                    'estado' => true
-                ],
-                (object) [
-                    'id' => 3,
-                    'nombreServicio' => 'Fotografía Comercial',
-                    'precioReferencial' => 250.00,
-                    'imagenReferencia' => null,
-                    'estado' => true
-                ]
-            ]);
-        }
 
         return Inertia::render('Dashboard', [
             'stats' => [

@@ -53,6 +53,13 @@ const filteredClientes = computed(() => {
         filtered = filtered.filter(cliente => cliente.idUsuario.toString() === filterUsuario.value);
     }
 
+    // Ordenar por fecha de creación descendente (más reciente primero)
+    filtered.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB - dateA; // Orden descendente
+    });
+
     return filtered;
 });
 
@@ -74,8 +81,8 @@ const deleteCliente = (id: number) => {
 };
 
 const generateReport = () => {
-    // Generar reporte PDF de clientes
-    window.open('/reportes/clientes/pdf', '_blank');
+    // Implementar generación de reporte
+    alert('Función de reporte en desarrollo');
 };
 
 const getInitials = (nombre: string, apellido?: string) => {
@@ -95,71 +102,55 @@ const formatDate = (dateString: string) => {
     <AppShell>
         <AppSidebar />
         <AppContent>
-            <div class="min-h-screen bg-gradient-to-br from-black via-gray-900 to-slate-900 flex-1 relative overflow-hidden">
-                <!-- Efectos de fondo animados -->
-                <div class="absolute inset-0 bg-gradient-to-br from-red-900/5 via-purple-900/5 to-pink-900/5 animate-pulse"></div>
-                <div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/10 via-transparent to-transparent"></div>
-                <div class="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/10 via-transparent to-transparent"></div>
+            <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex-1">
                 <!-- Header -->
-                 <!-- Header -->
-                <header class="relative bg-gradient-to-r from-black/90 via-gray-900/90 to-gray-800/90 backdrop-blur-xl border-b border-red-600/30 px-8 py-6 shadow-2xl">
-                    <div class="absolute inset-0 bg-gradient-to-r from-red-600/10 via-gray-600/10 to-black/10 backdrop-blur-sm"></div>
-                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                    <div class="relative z-10 flex items-center justify-between">
+                <header class="bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-lg border-b border-white/10 px-8 py-6">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <h1 class="text-3xl font-bold bg-gradient-to-r from-red-500 via-gray-200 to-white bg-clip-text text-transparent mb-2">👥 Clientes</h1>
-                            <p class="text-gray-300">Gestión de clientes</p>
+                            <h1 class="text-3xl font-bold bg-gradient-to-r from-amber-400 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-2">👥 Clientes</h1>
+                            <p class="text-slate-300">Gestión de clientes</p>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <Link href="/clientes/create" class="bg-gradient-to-r from-red-600 rom-red-500 from-red-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-red-700 hover:via-gray-800 hover:to-black transition-all duration-200 transform hover:scale-105 shadow-lg shadow-red-500/25">
+                            <Link href="/clientes/create" class="bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-amber-600 hover:via-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-amber-500/25">
                                 <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
                                 Registrar Nuevo Cliente
                             </Link>
-                            <button @click="generateReport" class="bg-gradient-to-r from-gray-700 to-gray-800 text-white px-6 py-3 rounded-xl font-semibold hover:from-gray-800 hover:to-black transition-all duration-200 transform hover:scale-105 shadow-lg">
+                            <button @click="generateReport" class="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-6 py-3 rounded-xl font-semibold hover:from-slate-700 hover:to-slate-800 transition-all duration-200 transform hover:scale-105 shadow-lg">
                                 <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
-                                Generar Reporte PDF
+                                Generar Reporte
                             </button>
                         </div>
                     </div>
                 </header>
 
                 <!-- Main Content Area -->
-                <main class="relative z-10 flex-1 overflow-y-auto p-8">
+                <main class="flex-1 overflow-y-auto p-8">
                     <!-- Notificaciones Flash -->
-                    <div v-if="$page.props.flash?.success" class="mb-6 relative p-4 bg-gradient-to-r from-green-900/90 to-emerald-900/90 border border-green-400/30 text-white rounded-xl backdrop-blur-xl shadow-2xl">
-                        <div class="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl"></div>
-                        <div class="relative z-10 flex items-center gap-3">
-                            <div class="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                            </div>
-                            <span class="font-semibold text-lg">{{ $page.props.flash.success }}</span>
+                    <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-900/80 border border-green-400/50 text-green-200 rounded-xl backdrop-blur-sm">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="font-medium">{{ $page.props.flash.success }}</span>
                         </div>
                     </div>
                     
-                    <div v-if="$page.props.flash?.error" class="mb-6 relative p-4 bg-gradient-to-r from-red-900/90 to-rose-900/90 border border-red-400/30 text-white rounded-xl backdrop-blur-xl shadow-2xl">
-                        <div class="absolute inset-0 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-xl"></div>
-                        <div class="relative z-10 flex items-center gap-3">
-                            <div class="w-8 h-8 bg-gradient-to-r from-red-400 to-rose-400 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                            </div>
-                            <span class="font-semibold text-lg">{{ $page.props.flash.error }}</span>
+                    <div v-if="$page.props.flash?.error" class="mb-6 p-4 bg-red-900/80 border border-red-400/50 text-red-200 rounded-xl backdrop-blur-sm">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="font-medium">{{ $page.props.flash.error }}</span>
                         </div>
                     </div>
 
                     <!-- Filtros y búsqueda -->
-                    <div class="relative bg-gradient-to-r from-black/60 via-gray-900/60 to-slate-900/60 backdrop-blur-xl rounded-xl shadow-2xl border border-red-500/20 p-6 mb-8">
-                        <!-- Efecto cristal -->
-                        <div class="absolute inset-0 bg-gradient-to-r from-red-500/5 via-purple-500/5 to-pink-500/5 rounded-xl"></div>
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/3 to-transparent rounded-xl"></div>
-                        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div class="bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 p-6 mb-8">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="flex-1">
                                 <label for="search" class="block text-sm font-medium text-slate-300 mb-2">Buscar clientes</label>
                                 <div class="relative">
@@ -195,13 +186,10 @@ const formatDate = (dateString: string) => {
                     </div>
 
                     <!-- Lista de clientes -->
-                    <div v-if="filteredClientes.length > 0" class="relative bg-gradient-to-br from-black/60 via-gray-900/60 to-slate-900/60 backdrop-blur-xl rounded-xl shadow-2xl border border-red-500/20 overflow-hidden">
-                        <!-- Efecto cristal -->
-                        <div class="absolute inset-0 bg-gradient-to-br from-red-500/5 via-purple-500/5 to-pink-500/5"></div>
-                        <div class="absolute inset-0 bg-gradient-to-br from-transparent via-white/3 to-transparent"></div>
-                        <div class="relative z-10 overflow-x-auto">
+                    <div v-if="filteredClientes.length > 0" class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden">
+                        <div class="overflow-x-auto">
                             <table class="w-full">
-                                <thead class="bg-gradient-to-r from-red-900/40 via-purple-900/40 to-pink-900/40 backdrop-blur-sm">
+                                <thead class="bg-gradient-to-r from-slate-700/60 to-slate-800/60 backdrop-blur-sm">
                                     <tr>
                                         <th class="px-6 py-4 text-left text-sm font-semibold text-slate-300 border-b border-white/10">
                                             <div class="flex items-center gap-2">
@@ -299,18 +287,15 @@ const formatDate = (dateString: string) => {
 
                     <!-- Estado vacío -->
                     <div v-else class="text-center py-16">
-                        <div class="relative bg-gradient-to-br from-black/60 via-gray-900/60 to-slate-900/60 backdrop-blur-xl rounded-xl shadow-2xl border border-red-500/20 p-12">
-                            <!-- Efecto cristal -->
-                            <div class="absolute inset-0 bg-gradient-to-br from-red-500/5 via-purple-500/5 to-pink-500/5 rounded-xl"></div>
-                            <div class="absolute inset-0 bg-gradient-to-br from-transparent via-white/3 to-transparent rounded-xl"></div>
-                            <div class="relative z-10 w-24 h-24 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <div class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 p-12">
+                            <div class="w-24 h-24 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                                 <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                 </svg>
                             </div>
-                            <h3 class="relative z-10 text-2xl font-bold text-white mb-4">No hay clientes registrados</h3>
-                            <p class="relative z-10 text-slate-300 mb-8">Comienza agregando el primer cliente al sistema de gestión.</p>
-                            <Link href="/clientes/create" class="relative z-10 bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-amber-600 hover:via-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-amber-500/25 inline-flex items-center">
+                            <h3 class="text-2xl font-bold text-white mb-4">No hay clientes registrados</h3>
+                            <p class="text-slate-300 mb-8">Comienza agregando el primer cliente al sistema de gestión.</p>
+                            <Link href="/clientes/create" class="bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-amber-600 hover:via-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-amber-500/25 inline-flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>

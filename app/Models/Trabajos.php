@@ -111,22 +111,6 @@ class Trabajos extends Model
         return $this->hasMany(Pagos::class, 'idTrabajo');
     }
 
-    // 🔗 Relación: Un trabajo tiene un servicio (para compatibilidad con código existente)
-    public function servicio()
-    {
-        return $this->hasOneThrough(
-            Servicios::class,
-            DetalleTrabajo::class,
-            'idTrabajo', // Foreign key en detalle_trabajo
-            'id', // Foreign key en servicios
-            'id', // Local key en trabajos
-            'idServicio' // Local key en detalle_trabajo
-        );
-    }
 
-    // 🔗 Configurar route model binding para usar slug
-    public function getRouteKeyName()
-    {
-        return 'slug';
-    }
+    
 }

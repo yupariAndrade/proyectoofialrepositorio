@@ -442,6 +442,7 @@ const verificarCampo = async (campo) => {
   }
 }
 
+
 const crearUsuario = async () => {
   if (!form.value.nombre || !form.value.idRol) {
     errorGeneral.value = 'Nombre y Rol son obligatorios'
@@ -470,7 +471,7 @@ const crearUsuario = async () => {
   router.post('/usuarios', form.value, { 
     onSuccess: () => {
       showSuccessMessage.value = true
-      successMessage.value = 'Usuario creado exitosamente'
+      successMessage.value = 'Usuario registrado exitosamente'
       setTimeout(() => {
         router.visit('/usuarios')
       }, 2000)

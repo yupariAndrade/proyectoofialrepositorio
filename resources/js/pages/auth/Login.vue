@@ -109,15 +109,6 @@ const onPasswordResetSuccess = (message: string) => {
                                         <label for="password" class="block text-xs font-semibold text-white/90 mb-1.5">
                                             Contraseña
                                         </label>
-                                       <!-- <button 
-                                            type="button"
-                                            @click="openForgotPasswordModal"
-                                            class="text-xs text-red-400 hover:text-red-300 transition-colors duration-200 flex items-center gap-1"
-                                            :tabindex="5"
-                                        >
-                                            <KeyRound class="w-3 h-3" />
-                                            ¿Olvidaste tu contraseña?
-                                        </button> -->
                                     </div>
                                     <div class="relative">
                                         <!-- @ts-ignore -->
@@ -169,7 +160,7 @@ const onPasswordResetSuccess = (message: string) => {
             
                                      <button 
                                             type="button"
-                                            @click="openForgotPasswordModal"
+                                            @click.prevent="openForgotPasswordModal"
                                             class="text-xs text-gray-200 hover:text-red-300 transition-colors duration-200 flex items-center gap-1"
                                             :tabindex="5"
                                         >

@@ -178,6 +178,63 @@ class RegistrarTrabajoController extends Controller
     }
 
     /**
+     * Procesar cuota de pago para un trabajo específico.
+     */
+    public function procesarCuota(Request $request, $id)
+    {
+        $trabajo = Trabajos::findOrFail($id);
+        
+        $validator = Validator::make($request->all(), [
+            'monto' => 'required|numeric|min:0.01',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $trabajo) {
+                // Obtener o crear el detalle del trabajo
+                $detalle = $trabajo->detallesTrabajo()->first();
+                if (!$detalle) {
+                    return response()->json(['error' => 'No se encontró detalle del trabajo'], 404);
+                }
+
+                // Obtener o crear el pago
+                $pago = $detalle->pago;
+                if (!$pago) {
+                    $pago = Pagos::create([
+                        'idTrabajo' => $trabajo->id,
+                        'total' => 0,
+                        'aCuenta' => 0,
+                        'saldo' => 0,
+                        'devoluciones' => 0,
+                    ]);
+                    $detalle->update(['idPago' => $pago->idPago]);
+                }
+
+                // Actualizar el pago con la nueva cuota
+                $nuevoACuenta = $pago->aCuenta + $request->monto;
+                $nuevoSaldo = $pago->total - $nuevoACuenta;
+
+                $pago->update([
+                    'aCuenta' => $nuevoACuenta,
+                    'saldo' => max(0, $nuevoSaldo), // El saldo no puede ser negativo
+                ]);
+
+                // Actualizar el estado del pago
+                $estadoPago = $this->determinarEstadoPago($nuevoACuenta, $nuevoSaldo);
+                $trabajo->update(['idEstadoPago' => $estadoPago]);
+            });
+
+            return response()->json(['success' => true, 'message' => 'Cuota procesada exitosamente']);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al procesar la cuota: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create(Request $request)

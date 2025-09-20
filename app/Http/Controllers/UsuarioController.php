@@ -118,51 +118,31 @@ class UsuarioController extends Controller
     public function verificarCampo(Request $request)
     {
         try {
-            $campo = $request->campo;
-            $excludeId = $request->excludeId;
+            // Log básico para empezar
+            \Illuminate\Support\Facades\Log::info('=== INICIO verificarCampo ===');
+            \Illuminate\Support\Facades\Log::info('Request recibido:', $request->all());
             
-            // Validación especial para nombre completo
-            if ($campo === 'nombre_completo') {
-                $request->validate([
-                    'nombre' => 'required|string',
-                    'apellidoPaterno' => 'required|string',
-                    'apellidoMaterno' => 'required|string',
-                    'excludeId' => 'nullable|integer'
-                ]);
-                
-                $query = Usuarios::where('nombre', $request->nombre)
-                    ->where('apellidoPaterno', $request->apellidoPaterno)
-                    ->where('apellidoMaterno', $request->apellidoMaterno);
-                
-                if ($excludeId) {
-                    $query->where('id', '!=', $excludeId);
-                }
-                
-                $existe = $query->exists();
-                
-                return response()->json([
-                    'existe' => $existe,
-                    'campo' => $campo,
-                    'nombre' => $request->nombre,
-                    'apellidoPaterno' => $request->apellidoPaterno,
-                    'apellidoMaterno' => $request->apellidoMaterno,
-                    'excludeId' => $excludeId
-                ]);
-            }
-            
-            // Validación básica para otros campos
+            // Validación básica
             $request->validate([
                 'campo' => 'required|string',
                 'valor' => 'required|string',
                 'excludeId' => 'nullable|integer'
             ]);
             
+            \Illuminate\Support\Facades\Log::info('Validación pasó correctamente');
+            
+            $campo = $request->campo;
             $valor = $request->valor;
+            $excludeId = $request->excludeId;
+            
+            \Illuminate\Support\Facades\Log::info('Parámetros extraídos:', compact('campo', 'valor', 'excludeId'));
             
             // Solo validar campos que realmente deben ser únicos
             $camposUnicos = ['ci', 'telefono', 'email'];
             
             if (!in_array($campo, $camposUnicos)) {
+                // Si no es un campo único, siempre retornar que NO existe duplicado
+                \Illuminate\Support\Facades\Log::info('Campo no es único, permitiendo duplicado:', ['campo' => $campo]);
                 return response()->json([
                     'existe' => false,
                     'campo' => $campo,
@@ -171,14 +151,23 @@ class UsuarioController extends Controller
                 ]);
             }
             
+            \Illuminate\Support\Facades\Log::info('Campo validado correctamente');
+            
             // Crear query básica
+            \Illuminate\Support\Facades\Log::info('Creando query...');
             $query = Usuarios::where($campo, $valor);
+            \Illuminate\Support\Facades\Log::info('Query creada exitosamente');
             
             if ($excludeId) {
+                \Illuminate\Support\Facades\Log::info('Agregando excludeId:', ['excludeId' => $excludeId]);
                 $query->where('id', '!=', $excludeId);
             }
             
+            \Illuminate\Support\Facades\Log::info('Ejecutando exists()...');
             $existe = $query->exists();
+            \Illuminate\Support\Facades\Log::info('Exists ejecutado:', ['existe' => $existe]);
+            
+            \Illuminate\Support\Facades\Log::info('=== FIN verificarCampo ===');
             
             return response()->json([
                 'existe' => $existe,
@@ -188,10 +177,120 @@ class UsuarioController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error en verificarCampo:', [
+            \Illuminate\Support\Facades\Log::error('=== ERROR en verificarCampo ===', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verificar si existe un usuario duplicado por nombre, CI y apellido paterno
+     */
+    public function verificarDuplicados(Request $request)
+    {
+        try {
+            $request->validate([
+                'nombre' => 'required|string',
+                'ci' => 'nullable|string',
+                'apellidoPaterno' => 'nullable|string',
+                'id' => 'nullable|integer' // Para excluir el usuario actual en edición
+            ]);
+
+            $nombre = trim($request->nombre);
+            $ci = trim($request->ci);
+            $apellidoPaterno = trim($request->apellidoPaterno);
+            $idExcluir = $request->id;
+
+            // Construir la consulta
+            $query = Usuarios::query();
+
+            // Condiciones para considerar duplicado
+            $conditions = [];
+
+            // 1. Mismo nombre + mismo CI (si CI no está vacío)
+            if (!empty($ci)) {
+                $conditions[] = function($q) use ($nombre, $ci) {
+                    $q->where('nombre', $nombre)
+                      ->where('ci', $ci);
+                };
+            }
+
+            // 2. Mismo nombre + mismo apellido paterno (si apellido paterno no está vacío)
+            if (!empty($apellidoPaterno)) {
+                $conditions[] = function($q) use ($nombre, $apellidoPaterno) {
+                    $q->where('nombre', $nombre)
+                      ->where('apellidoPaterno', $apellidoPaterno);
+                };
+            }
+
+            // 3. Mismo CI + mismo apellido paterno (si ambos no están vacíos)
+            if (!empty($ci) && !empty($apellidoPaterno)) {
+                $conditions[] = function($q) use ($ci, $apellidoPaterno) {
+                    $q->where('ci', $ci)
+                      ->where('apellidoPaterno', $apellidoPaterno);
+                };
+            }
+
+            // Si hay condiciones, aplicar OR
+            if (!empty($conditions)) {
+                $query->where(function($q) use ($conditions) {
+                    foreach ($conditions as $condition) {
+                        $q->orWhere($condition);
+                    }
+                });
+            }
+
+            // Excluir el usuario actual si se está editando
+            if ($idExcluir) {
+                $query->where('id', '!=', $idExcluir);
+            }
+
+            $duplicados = $query->get();
+
+            if ($duplicados->count() > 0) {
+                $mensajes = [];
+                foreach ($duplicados as $duplicado) {
+                    $motivos = [];
+                    if (!empty($ci) && $duplicado->ci === $ci) {
+                        $motivos[] = 'CI';
+                    }
+                    if (!empty($apellidoPaterno) && $duplicado->apellidoPaterno === $apellidoPaterno) {
+                        $motivos[] = 'apellido paterno';
+                    }
+                    if ($duplicado->nombre === $nombre) {
+                        $motivos[] = 'nombre';
+                    }
+                    
+                    $mensajes[] = "Usuario '{$duplicado->nombre} {$duplicado->apellidoPaterno}' (ID: {$duplicado->id}) - Coincide en: " . implode(', ', $motivos);
+                }
+
+                return response()->json([
+                    'existe' => true,
+                    'duplicados' => $duplicados,
+                    'mensaje' => 'Se encontraron usuarios similares: ' . implode('; ', $mensajes),
+                    'motivos' => $mensajes
+                ]);
+            }
+
+            return response()->json([
+                'existe' => false,
+                'mensaje' => 'No se encontraron usuarios duplicados'
+            ]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('=== ERROR en verificarDuplicados ===', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([

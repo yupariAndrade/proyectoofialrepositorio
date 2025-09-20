@@ -210,6 +210,13 @@ const filteredServicios = computed(() => {
     )
   }
 
+  // Ordenar por fecha de creación descendente (más reciente primero)
+  filtered.sort((a, b) => {
+    const dateA = new Date(a.created_at || 0)
+    const dateB = new Date(b.created_at || 0)
+    return dateB - dateA // Orden descendente
+  })
+
   return filtered
 })
 

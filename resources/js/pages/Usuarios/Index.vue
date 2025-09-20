@@ -250,6 +250,8 @@ const availableRoles = computed(() => props.roles || [])
 
 const filteredUsuarios = computed(() => {
   let filtered = props.usuarios || []
+  
+  // Aplicar filtros
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase()
     filtered = filtered.filter((u) =>
@@ -263,6 +265,14 @@ const filteredUsuarios = computed(() => {
   if (filterRole.value !== '') {
     filtered = filtered.filter((u) => String(u.idRol) === String(filterRole.value))
   }
+  
+  // Ordenar por fecha de creación descendente (más reciente primero)
+  filtered.sort((a, b) => {
+    const dateA = new Date(a.created_at || 0)
+    const dateB = new Date(b.created_at || 0)
+    return dateB - dateA // Orden descendente
+  })
+  
   return filtered
 })
 

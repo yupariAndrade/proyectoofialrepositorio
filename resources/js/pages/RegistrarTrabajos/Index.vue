@@ -2,34 +2,34 @@
   <AppShell>
     <AppSidebar />
     <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex-1">
-      <!-- Header -->
-      <header class="bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-lg border-b border-white/10 px-8 py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div class="flex items-center">
-              <div class="w-10 h-10 bg-gradient-to-r from-orange-400 to-purple-500 rounded-lg flex items-center justify-center mr-3">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                </svg>
-              </div>
-              <div>
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-orange-400 to-purple-500 bg-clip-text text-transparent">
-                  Trabajos Registrados
-                </h1>
-                <p class="text-gray-400 mt-1">Gestión de todos los trabajos y su estado</p>
-              </div>
+    <!-- Header Section -->
+    <div class="bg-gray-800 border-b border-gray-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-gradient-to-r from-orange-400 to-purple-500 rounded-lg flex items-center justify-center mr-3">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
             </div>
-            <div class="mt-4 sm:mt-0">
-              <button @click="crearNuevoTrabajo" class="bg-gradient-to-r from-orange-400 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:from-orange-500 hover:to-purple-600 transition-all duration-200 flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                + Nuevo Trabajo
-              </button>
+            <div>
+              <h1 class="text-3xl font-bold bg-gradient-to-r from-orange-400 to-purple-500 bg-clip-text text-transparent">
+                Trabajos Registrados
+              </h1>
+              <p class="text-gray-400 mt-1">Gestión de todos los trabajos y su estado</p>
             </div>
           </div>
+                     <div class="mt-4 sm:mt-0">
+             <button @click="crearNuevoTrabajo" class="bg-gradient-to-r from-orange-400 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:from-orange-500 hover:to-purple-600 transition-all duration-200 flex items-center">
+               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+               </svg>
+               + Nuevo Trabajo
+             </button>
+           </div>
         </div>
-      </header>
+      </div>
+    </div>
 
     <!-- Success Message -->
     <div v-if="successMessage" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -201,15 +201,23 @@
                        {{ servicio.nombreServicio }}
                      </div>
                      <div class="text-sm text-gray-400">
-                       <span v-if="getDescuento(servicio) > 0" class="text-red-400 line-through">
-                         {{ formatPrecio(servicio.precio) }} Bs
-                       </span>
-                       <span :class="getDescuento(servicio) > 0 ? 'text-green-400 ml-2' : 'text-gray-400'">
-                         {{ formatPrecio(getPrecioFinal(servicio)) }} Bs
-                       </span>
-                       <span v-if="getDescuento(servicio) > 0" class="text-xs text-orange-400 block">
-                         -{{ formatPrecio(getDescuento(servicio)) }} Bs desc.
-                       </span>
+                       <div class="mb-1">
+                         <span class="text-gray-300">{{ servicio.cantidad || 1 }} × {{ formatPrecio(servicio.precio) }} Bs</span>
+                       </div>
+                       <div v-if="getDescuento(servicio) > 0" class="text-xs">
+                         <span class="text-red-400 line-through">
+                           Subtotal: {{ formatPrecio(getSubtotalBruto(servicio)) }} Bs
+                         </span>
+                         <span class="text-orange-400 block">
+                           -{{ formatPrecio(getDescuento(servicio)) }} Bs desc.
+                         </span>
+                         <span class="text-green-400 font-medium">
+                           Final: {{ formatPrecio(getSubtotalFinal(servicio)) }} Bs
+                         </span>
+                       </div>
+                       <div v-else class="text-green-400">
+                         Subtotal: {{ formatPrecio(getSubtotalBruto(servicio)) }} Bs
+                       </div>
                      </div>
                    </div>
                  </td>
@@ -247,21 +255,21 @@
                                  <!-- TOTAL -->
                  <td class="px-6 py-4 whitespace-nowrap">
                    <div class="text-sm font-bold text-gray-200">
-                     {{ (Number(trabajo.total) || 0).toFixed(2) }} Bs
+                     {{ getTotalTrabajo(trabajo).toFixed(2) }} Bs
                    </div>
                  </td>
 
                  <!-- A CUENTA -->
                  <td class="px-6 py-4 whitespace-nowrap">
                    <div class="text-sm text-gray-200">
-                     {{ (Number(trabajo.aCuenta) || 0).toFixed(2) }} Bs
+                     {{ (Number(trabajo.pagado) || 0).toFixed(2) }} Bs
                    </div>
                  </td>
 
                  <!-- SALDO -->
                  <td class="px-6 py-4 whitespace-nowrap">
                    <div class="text-sm font-medium text-gray-200">
-                     {{ (Number(trabajo.saldo) || 0).toFixed(2) }} Bs
+                     {{ (getTotalTrabajo(trabajo) - (Number(trabajo.pagado) || 0)).toFixed(2) }} Bs
                    </div>
                  </td>
 
@@ -328,6 +336,18 @@
                        </svg>
                      </button>
                      
+                     <!-- Botón Agregar Pago/Cuota -->
+                     <button 
+                       @click="agregarCuota(trabajo)"
+                       class="text-yellow-400 hover:text-yellow-300 transition-colors duration-150"
+                       title="Agregar pago/cuota"
+                       v-if="trabajo.saldo > 0"
+                     >
+                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                       </svg>
+                     </button>
+                     
                      <!-- Botón Eliminar -->
                      <button 
                        @click="eliminarTrabajo(trabajo)"
@@ -336,18 +356,6 @@
                      >
                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                       </svg>
-                     </button>
-                     
-                     <!-- Botón Cuota -->
-                     <button 
-                       v-if="trabajo.saldo > 0"
-                       @click="mostrarFormularioCuota(trabajo)"
-                       class="text-yellow-400 hover:text-yellow-300 transition-colors duration-150"
-                       title="Agregar cuota"
-                     >
-                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                        </svg>
                      </button>
                    </div>
@@ -371,97 +379,22 @@
                'Comienza creando tu primer trabajo.' }}
           </p>
           <button class="bg-gradient-to-r from-orange-400 to-purple-500 text-white px-6 py-2 rounded-lg font-medium hover:from-orange-500 hover:to-purple-600 transition-all duration-200">
-            + Crear Trabajo
+            Crear Trabajo
           </button>
         </div>
       </div>
     </div>
     </div>
 
-    <!-- Modal para Agregar Cuota -->
-    <div v-if="mostrarCuota" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-[#1a1a2e] rounded-lg p-6 w-full max-w-md mx-4">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-white">💰 Agregar Cuota</h3>
-          <button @click="cerrarModalCuota" class="text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        
-        <div v-if="trabajoSeleccionado" class="space-y-4">
-          <!-- Información del trabajo -->
-          <div class="bg-[#0c1d3a] p-4 rounded-lg">
-            <h4 class="text-lg font-semibold text-white mb-3">📋 Información del Trabajo</h4>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <span class="text-gray-400">Cliente:</span>
-                <p class="text-white font-medium">{{ trabajoSeleccionado?.cliente?.nombre }}</p>
-              </div>
-              <div>
-                <span class="text-gray-400">Total:</span>
-                <p class="text-white font-medium">{{ trabajoSeleccionado?.total }} Bs</p>
-              </div>
-              <div>
-                <span class="text-gray-400">Ya pagado:</span>
-                <p class="text-white font-medium">{{ trabajoSeleccionado?.aCuenta }} Bs</p>
-              </div>
-              <div>
-                <span class="text-gray-400">Saldo pendiente:</span>
-                <p class="text-white font-medium">{{ trabajoSeleccionado?.saldo }} Bs</p>
-              </div>
-              <div class="col-span-2">
-                <span class="text-gray-400">Estado actual:</span>
-                <p :class="getEstadoClass(trabajoSeleccionado?.estadoPago)" class="font-medium">
-                  {{ trabajoSeleccionado?.estadoPago?.nombre }}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Formulario de cuota -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-white mb-2">Monto de la cuota:</label>
-              <input 
-                v-model="montoCuota" 
-                type="number" 
-                :max="trabajoSeleccionado?.saldo"
-                step="0.01"
-                placeholder="Ej: 50.00"
-                class="w-full bg-[#0a192f] text-white border border-cyan-500 rounded-md px-3 py-2 focus:ring-cyan-400 focus:border-cyan-400"
-              >
-              <small class="text-gray-400">Máximo: {{ trabajoSeleccionado?.saldo }} Bs</small>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-white mb-2">Estado de pago (opcional):</label>
-              <select v-model="nuevoEstadoPago" class="w-full bg-[#0a192f] text-white border border-cyan-500 rounded-md px-3 py-2 focus:ring-cyan-400 focus:border-cyan-400">
-                <option value="">Mantener estado actual</option>
-                <option v-for="estado in estadosPago" :key="estado.id" :value="estado.id">
-                  {{ estado.nombre }}
-                </option>
-              </select>
-            </div>
-          </div>
-          
-          <!-- Botones -->
-          <div class="flex space-x-3 pt-4">
-            <button @click="cerrarModalCuota" class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
-              Cancelar
-            </button>
-            <button 
-              @click="procesarCuota" 
-              :disabled="!montoCuota || parseFloat(montoCuota) <= 0 || parseFloat(montoCuota) > (trabajoSeleccionado?.saldo || 0)"
-              class="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-md hover:from-yellow-600 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              💰 Procesar Cuota
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Modal Agregar Cuota -->
+    <ModalAgregarCuota 
+      :mostrar="mostrarModalCuota"
+      :trabajo="trabajoSeleccionado"
+      :estados-pago="estadosPago"
+      @cerrar="cerrarModalCuota"
+      @cuota-procesada="onCuotaProcesada"
+    />
+
   </AppShell>
 </template>
 
@@ -470,6 +403,7 @@ import { ref, computed, onMounted } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
+import ModalAgregarCuota from './components/ModalAgregarCuota.vue'
 
 // Obtener la página actual
 const page = usePage()
@@ -478,12 +412,6 @@ const page = usePage()
 const successMessage = computed(() => {
   return (page.props as any).flash?.success || null
 })
-
-// Variables para el modal de cuota
-const mostrarCuota = ref(false)
-const trabajoSeleccionado = ref<Trabajo | null>(null)
-const montoCuota = ref('')
-const nuevoEstadoPago = ref('')
 
 // Tipos de datos
 interface Cliente {
@@ -539,9 +467,9 @@ interface Trabajo {
   estadoPago: EstadoPago
   responsable?: Responsable
   servicios: Servicio[]
-  total: number
-  aCuenta: number
+  totalTrabajo: number
   saldo: number
+  pagado: number
 }
 
 // Props del componente
@@ -561,6 +489,10 @@ const filtros = ref({
   estadoId: '',
   estadoPagoId: ''
 })
+
+// Estado del modal de agregar cuota
+const mostrarModalCuota = ref(false)
+const trabajoSeleccionado = ref<any>(null)
 
 // Trabajos filtrados
 const trabajosFiltrados = computed(() => {
@@ -605,82 +537,30 @@ const editarTrabajo = (trabajo: Trabajo) => {
 const eliminarTrabajo = (trabajo: Trabajo) => {
   // Confirmar antes de eliminar
   if (confirm(`¿Estás seguro de que quieres eliminar el trabajo de ${trabajo.cliente.nombre}?`)) {
-    console.log('Eliminando trabajo:', trabajo.id, 'Slug:', trabajo.slug)
-    
-    // Crear un formulario para enviar la petición DELETE
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = route('registrar-trabajos.destroy', trabajo.slug)
-    
-    // Agregar el token CSRF
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-    if (csrfToken) {
-      const csrfInput = document.createElement('input')
-      csrfInput.type = 'hidden'
-      csrfInput.name = '_token'
-      csrfInput.value = csrfToken
-      form.appendChild(csrfInput)
-    }
-    
-    // Agregar el método DELETE
-    const methodInput = document.createElement('input')
-    methodInput.type = 'hidden'
-    methodInput.name = '_method'
-    methodInput.value = 'DELETE'
-    form.appendChild(methodInput)
-    
-    // Enviar el formulario
-    document.body.appendChild(form)
-    form.submit()
+    // Aquí puedes implementar la lógica de eliminación
+    console.log('Eliminando trabajo:', trabajo.id)
+    // Por ahora solo muestra un mensaje
+    alert('Función de eliminación en desarrollo')
   }
 }
 
-// Funciones para el modal de cuota
-const mostrarFormularioCuota = (trabajo: Trabajo) => {
+const agregarCuota = (trabajo: Trabajo) => {
+  console.log('agregarCuota llamado con:', trabajo)
+  // Abrir modal para agregar cuota
   trabajoSeleccionado.value = trabajo
-  montoCuota.value = ''
-  nuevoEstadoPago.value = ''
-  mostrarCuota.value = true
+  mostrarModalCuota.value = true
+  console.log('Modal debería estar abierto:', mostrarModalCuota.value)
 }
 
 const cerrarModalCuota = () => {
-  mostrarCuota.value = false
+  mostrarModalCuota.value = false
   trabajoSeleccionado.value = null
-  montoCuota.value = ''
-  nuevoEstadoPago.value = ''
 }
 
-const procesarCuota = async () => {
-  if (!trabajoSeleccionado.value || !montoCuota.value) return
-  
-  try {
-    const response = await fetch(`/trabajos/${trabajoSeleccionado.value.id}/cuota`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-      },
-      body: JSON.stringify({
-        monto: parseFloat(montoCuota.value),
-        nuevoEstadoPago: nuevoEstadoPago.value || null
-      })
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success) {
-        // Cerrar modal y recargar la página para mostrar datos actualizados
-        cerrarModalCuota()
-        alert('✅ Cuota procesada exitosamente')
-        window.location.reload()
-      }
-    } else {
-      alert('❌ Error al procesar la cuota')
-    }
-  } catch (error) {
-    console.error('Error al procesar cuota:', error)
-    alert('❌ Error al procesar la cuota')
-  }
+const onCuotaProcesada = (trabajo: any) => {
+  console.log('Cuota procesada para:', trabajo)
+  // Recargar la página para actualizar los datos
+  window.location.reload()
 }
 
 // Función helper para formatear precios
@@ -699,48 +579,39 @@ const getDescuento = (servicio: any): number => {
   return Number(servicio.descuento) || 0
 }
 
-// Función helper para obtener el precio final de un servicio
+// Función helper para obtener el subtotal bruto de un servicio
+const getSubtotalBruto = (servicio: any): number => {
+  const precioOriginal = Number(servicio.precio) || 0
+  const cantidad = Number(servicio.cantidad) || 0
+  return precioOriginal * cantidad
+}
+
+// Función helper para obtener el subtotal final de un servicio (después del descuento)
+const getSubtotalFinal = (servicio: any): number => {
+  const subtotalBruto = getSubtotalBruto(servicio)
+  const descuento = getDescuento(servicio)
+  return subtotalBruto - descuento
+}
+
+// Función helper para obtener el precio final de un servicio (mantenida por compatibilidad)
 const getPrecioFinal = (servicio: any): number => {
   const precioOriginal = Number(servicio.precio) || 0
   const descuento = getDescuento(servicio)
   return precioOriginal - descuento
 }
 
-// Función helper para obtener la clase CSS del estado de pago
-const getEstadoClass = (estadoPago: any): string => {
-  if (!estadoPago) return 'text-gray-400'
+// Función helper para calcular el total correcto de un trabajo
+const getTotalTrabajo = (trabajo: any): number => {
+  if (!trabajo.servicios || trabajo.servicios.length === 0) return 0
   
-  switch (estadoPago.id) {
-    case 1: // Pendiente
-      return 'text-yellow-400'
-    case 2: // Parcial
-      return 'text-blue-400'
-    case 3: // Completado
-      return 'text-green-400'
-    case 4: // Cancelado
-      return 'text-red-400'
-    default:
-      return 'text-gray-400'
-  }
+  return trabajo.servicios.reduce((total: number, servicio: any) => {
+    return total + getSubtotalFinal(servicio)
+  }, 0)
 }
 
 // Lifecycle
 onMounted(() => {
   console.log('🚀 Index.vue montado, trabajos recibidos:', props.trabajos)
-  
-  // Debug: verificar si hay descuentos
-  if (props.trabajos && props.trabajos.length > 0) {
-    const primerTrabajo = props.trabajos[0]
-    console.log('🔍 Primer trabajo:', primerTrabajo)
-    if (primerTrabajo.servicios && primerTrabajo.servicios.length > 0) {
-      const primerServicio = primerTrabajo.servicios[0]
-      console.log('🔍 Primer servicio completo:', primerServicio)
-      console.log('🔍 Descuento del primer servicio:', getDescuento(primerServicio))
-      console.log('🔍 Precio original:', primerServicio.precio)
-      console.log('🔍 Precio final:', getPrecioFinal(primerServicio))
-      console.log('🔍 ¿Tiene descuento?', getDescuento(primerServicio) > 0)
-    }
-  }
 })
 </script>
 

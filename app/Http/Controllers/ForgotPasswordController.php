@@ -6,7 +6,6 @@ use App\Models\Usuarios;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class ForgotPasswordController extends Controller
 {
@@ -23,6 +22,7 @@ class ForgotPasswordController extends Controller
      */
     public function updatePassword(Request $request)
     {
+
         // Validar los datos de entrada
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:usuarios,email',
@@ -53,8 +53,8 @@ class ForgotPasswordController extends Controller
         }
 
         try {
-            // Buscar el usuario por email
-            $usuario = Usuarios::where('email', $request->email)->first();
+            // Buscar el usuario por email con su rol
+            $usuario = Usuarios::with('rol')->where('email', $request->email)->first();
 
             if (!$usuario) {
                 return redirect()->back()
@@ -62,14 +62,38 @@ class ForgotPasswordController extends Controller
                     ->withInput();
             }
 
+            // 🔐 VALIDACIONES DE SEGURIDAD ADICIONALES
+            
+            // 1. Verificar que el usuario esté ACTIVO
+            if (!$usuario->estado) {
+                return redirect()->back()
+                    ->withErrors(['email' => 'Tu cuenta está inactiva. Contacta al administrador.'])
+                    ->withInput();
+            }
+
+            // 2. Verificar que tenga un ROL válido
+            if (!$usuario->rol) {
+                return redirect()->back()
+                    ->withErrors(['email' => 'Tu cuenta no tiene un rol asignado. Contacta al administrador.'])
+                    ->withInput();
+            }
+
+            // 3. Verificar que la nueva contraseña sea diferente a la actual
+            if (Hash::check($request->password, $usuario->password)) {
+                return redirect()->back()
+                    ->withErrors(['password' => 'La nueva contraseña debe ser diferente a la actual.'])
+                    ->withInput();
+            }
+
             // Actualizar solo la contraseña
             $usuario->update([
-                'password' => $request->password // El modelo Usuarios ya hashea automáticamente en boot()
+                'password' => $request->password // El modelo Usuarios ya hashea automáticamente
             ]);
 
             return redirect()->back()->with('success', 'Contraseña actualizada exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.');
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error al actualizar contraseña: ' . $e->getMessage());
             return redirect()->back()
                 ->withErrors(['error' => 'Ocurrió un error al actualizar la contraseña. Por favor, intenta nuevamente.'])
                 ->withInput();

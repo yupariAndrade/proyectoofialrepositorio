@@ -57,7 +57,7 @@ class PagoController extends Controller
      */
     public function create()
     {
-        $trabajos = Trabajos::with(['cliente', 'servicio', 'detalleTrabajo'])->get();
+        $trabajos = Trabajos::with(['cliente', 'servicio', 'detallesTrabajo'])->get();
         $estadosPago = EstadoPago::all();
         
         return Inertia::render('Pagos/Create', [
@@ -117,7 +117,7 @@ class PagoController extends Controller
     public function edit($id)
     {
         $pago = Pagos::findOrFail($id);
-        $trabajos = Trabajos::with(['cliente', 'servicio', 'detalleTrabajo'])->get();
+        $trabajos = Trabajos::with(['cliente', 'servicio', 'detallesTrabajo'])->get();
         $estadosPago = EstadoPago::all();
         
         return Inertia::render('Pagos/Edit', [
@@ -206,7 +206,7 @@ class PagoController extends Controller
     public function checkout(Request $request)
     {
         $ids = collect($request->input('trabajos', []))->filter()->values();
-        $trabajos = Trabajos::with(['cliente','servicio', 'detalleTrabajo'])->whereIn('id', $ids)->get();
+        $trabajos = Trabajos::with(['cliente','servicio', 'detallesTrabajo'])->whereIn('id', $ids)->get();
         $estadoPendiente = EstadoPago::orderBy('id')->first();
         
         return Inertia::render('Pagos/Checkout', [

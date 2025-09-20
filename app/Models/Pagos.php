@@ -20,7 +20,8 @@ class Pagos extends Model
         'idTrabajo',
         'total',
         'aCuenta', 
-        'saldo'
+        'saldo',
+        'devoluciones'
     ];
 
     // 🔗 Relación: Un pago pertenece a un trabajo
@@ -37,14 +38,14 @@ class Pagos extends Model
     public static function calcularPago($idTrabajo, $montoPagado)
     {
         // Obtener el trabajo con sus relaciones
-        $trabajo = Trabajos::with(['servicio', 'detalleTrabajo'])->find($idTrabajo);
+        $trabajo = Trabajos::with(['servicio', 'detallesTrabajo'])->find($idTrabajo);
         
         if (!$trabajo) {
             throw new \Exception('Trabajo no encontrado');
         }
 
         // Calcular el total del trabajo: precioReferencial × cantidad
-        $total = $trabajo->servicio->precioReferencial * $trabajo->detalleTrabajo->cantidad;
+        $total = $trabajo->servicio->precioReferencial * $trabajo->detallesTrabajo->first()->cantidad;
         
         // Obtener pagos anteriores del mismo trabajo
         $pagosAnteriores = self::where('idTrabajo', $idTrabajo)->sum('aCuenta');
@@ -90,13 +91,13 @@ class Pagos extends Model
      */
     public static function obtenerSaldoPendiente($idTrabajo): float
     {
-        $trabajo = Trabajos::with(['servicio', 'detalleTrabajo'])->find($idTrabajo);
+        $trabajo = Trabajos::with(['servicio', 'detallesTrabajo'])->find($idTrabajo);
         
         if (!$trabajo) {
             return 0;
         }
 
-        $total = $trabajo->servicio->precioReferencial * $trabajo->detalleTrabajo->cantidad;
+        $total = $trabajo->servicio->precioReferencial * $trabajo->detallesTrabajo->first()->cantidad;
         $pagosRealizados = self::where('idTrabajo', $idTrabajo)->sum('aCuenta');
         
         return $total - $pagosRealizados;

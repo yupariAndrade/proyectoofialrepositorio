@@ -110,11 +110,11 @@ class VerificarDetalleTrabajo extends Command
         // Verificar con Eloquent
         $this->info('🔍 Verificando con Eloquent...');
         try {
-            $trabajo = \App\Models\Trabajos::with('detalleTrabajo')->find(16);
+            $trabajo = \App\Models\Trabajos::with('detallesTrabajo')->find(16);
             if ($trabajo) {
                 $this->info("✅ Trabajo encontrado: ID {$trabajo->id}");
-                if ($trabajo->detalleTrabajo) {
-                    $this->info("✅ Detalle encontrado: " . json_encode($trabajo->detalleTrabajo->toArray()));
+                if ($trabajo->detallesTrabajo && $trabajo->detallesTrabajo->count() > 0) {
+                    $this->info("✅ Detalle encontrado: " . json_encode($trabajo->detallesTrabajo->first()->toArray()));
                 } else {
                     $this->warn("⚠️  Detalle NO encontrado para trabajo ID {$trabajo->id}");
                 }

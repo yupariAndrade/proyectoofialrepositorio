@@ -199,6 +199,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/registrar-trabajos/{trabajo:slug}/edit', [RegistrarTrabajoController::class, 'edit'])->name('registrar-trabajos.edit');
         Route::put('/registrar-trabajos/{trabajo:slug}', [RegistrarTrabajoController::class, 'update'])->name('registrar-trabajos.update');
         Route::delete('/registrar-trabajos/{trabajo:slug}', [RegistrarTrabajoController::class, 'destroy'])->name('registrar-trabajos.destroy');
+        
+        // Ruta para procesar cuotas de pago
+        Route::post('/trabajos/{id}/cuota', [RegistrarTrabajoController::class, 'procesarCuota'])->name('trabajos.cuota');
     });
 
     // Reportes
