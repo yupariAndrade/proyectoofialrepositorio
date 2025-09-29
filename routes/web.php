@@ -43,7 +43,7 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard administrativo (ya no se usa /dashboard aquí)
 
     // Usuarios - Solo administradores
-    Route::middleware(['role:administrador'])->controller(UsuarioController::class)->group(function () {
+    Route::middleware(['role:Administrador'])->controller(UsuarioController::class)->group(function () {
         Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios');
         Route::get('/usuarios/create', [UsuarioController::class, 'create'])->name('usuarios.create');
         Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
@@ -202,6 +202,9 @@ Route::middleware(['auth'])->group(function () {
         
         // Ruta para procesar cuotas de pago
         Route::post('/trabajos/{id}/cuota', [RegistrarTrabajoController::class, 'procesarCuota'])->name('trabajos.cuota');
+        
+        // Ruta para cálculos en tiempo real
+        Route::post('/calcular-total', [App\Http\Controllers\CalculoController::class, 'calcularTotal'])->name('calcular.total');
     });
 
     // Reportes

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lista de Clientes - FOTO STUDIO EU</title>
   <style>
-    /* Configuración de impresión */
     @page {
       size: A4 landscape;
       margin: 2cm;
@@ -13,7 +12,7 @@
 
     body {
       font-family: 'Arial', sans-serif;
-      font-size: 14.67px;
+      font-size: 12px;
       margin: 0;
       padding: 0;
       background-color: #f9fafb;
@@ -41,7 +40,7 @@
     }
 
     .logo img {
-      width: 72px;
+       width: 72px;
       height: 72px;
       object-fit: contain;
       border-radius: 8px;
@@ -93,7 +92,7 @@
       width: 100%;
       border-collapse: collapse;
       background: white;
-      font-size: 14.67px;
+      font-size: 12px;
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
@@ -102,7 +101,7 @@
     th {
       background: #dc2626;
       color: white;
-      font-size: 14.67px;
+      font-size: 12px;
       font-weight: bold;
       text-transform: uppercase;
       padding: 10px;
@@ -110,7 +109,7 @@
     }
 
     td {
-      font-size: 14.67px;
+      font-size: 12px;
       color: #374151;
       padding: 8px;
       border-bottom: 1px solid #e5e7eb;
@@ -133,18 +132,18 @@
     .client-name {
       font-weight: 600;
       color: #1f2937;
-      font-size: 14.67px;
+      font-size: 12px;
     }
 
     .client-info {
       color: #6b7280;
-      font-size: 13px;
+      font-size: 11px;
       margin-top: 2px;
     }
 
     .contact-info {
       color: #374151;
-      font-size: 13px;
+      font-size: 11px;
     }
 
     .email {
@@ -163,26 +162,26 @@
       padding: 4px 8px;
       border-radius: 6px;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 600;
     }
 
     .date {
       color: #9ca3af;
-      font-size: 13px;
+      font-size: 11px;
     }
 
     .responsible {
       font-weight: 500;
       color: #374151;
-      font-size: 13px;
+      font-size: 11px;
     }
 
     /* Footer */
     .footer {
       margin-top: 20px;
       text-align: center;
-      font-size: 13px;
+      font-size: 11px;
       color: #6b7280;
       border-top: 1px solid #dc2626;
       padding-top: 10px;
@@ -204,7 +203,7 @@
       padding: 40px;
       color: #9ca3af;
       font-style: italic;
-      font-size: 14.67px;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -278,6 +277,7 @@
   <!-- Footer -->
   <div class="footer">
     <p>© {{ date('Y') }} FOTO STUDIO EU - Todos los derechos reservados</p>
+    <p class="tagline">Hace que la magia suceda</p>
   </div>
 </body>
 </html>

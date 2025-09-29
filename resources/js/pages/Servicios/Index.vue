@@ -29,6 +29,20 @@
 
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto p-8">
+          <!-- Notificaciones Flash -->
+          <div v-if="flashSuccess" class="mb-6 p-4 bg-green-900/80 border border-green-400/50 text-green-200 rounded-xl backdrop-blur-sm">
+            <div class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              <span class="font-medium">{{ flashSuccess }}</span>
+            </div>
+          </div>
+          <div v-if="flashError" class="mb-6 p-4 bg-red-900/80 border border-red-400/50 text-red-200 rounded-xl backdrop-blur-sm">
+            <div class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              <span class="font-medium">{{ flashError }}</span>
+            </div>
+          </div>
+          
           <!-- Filtros y búsqueda -->
           <div class="bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 p-6 mb-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -168,9 +182,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
+
+// Interfaces para tipado
+interface FlashMessages {
+  success?: string
+  error?: string
+}
 
 // Props que vienen desde el controlador
 const props = defineProps<{
@@ -185,9 +205,16 @@ const props = defineProps<{
   }>
 }>()
 
+// Obtener la página actual
+const page = usePage()
+
+// Computed properties para flash messages
+const flashSuccess = computed(() => (page.props.flash as FlashMessages | undefined)?.success)
+const flashError = computed(() => (page.props.flash as FlashMessages | undefined)?.error)
+
 // Estados reactivos
-const searchTerm = ref('')
-const filterStatus = ref('')
+const searchTerm = ref<string>('')
+const filterStatus = ref<string>('')
 
 // Servicios filtrados
 const filteredServicios = computed(() => {
@@ -212,8 +239,8 @@ const filteredServicios = computed(() => {
 
   // Ordenar por fecha de creación descendente (más reciente primero)
   filtered.sort((a, b) => {
-    const dateA = new Date(a.created_at || 0)
-    const dateB = new Date(b.created_at || 0)
+    const dateA = new Date(a.created_at || 0).getTime()
+    const dateB = new Date(b.created_at || 0).getTime()
     return dateB - dateA // Orden descendente
   })
 

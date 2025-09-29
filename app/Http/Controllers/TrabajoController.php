@@ -57,8 +57,6 @@ class TrabajoController extends Controller
                     'tamano' => $detalle->tamano,
                     'color' => $detalle->color,
                     'modelo' => $detalle->modelo,
-                    'tipoDocumento' => $detalle->tipoDocumento,
-                    'tipoEvento' => $detalle->tipoEvento,
                 ];
             });
 
@@ -131,7 +129,7 @@ class TrabajoController extends Controller
         $validator = Validator::make($request->all(), [
             'idCliente' => 'required|exists:clientes,id',
             'idServicio' => 'required|exists:servicios,id',
-            'idUsuario' => 'required|exists:usuarios,id',
+            'idResponsable' => 'nullable|exists:usuarios,id',
             'fechaRegistro' => 'required|date',
             'fechaEntrega' => 'nullable|date|after_or_equal:fechaRegistro',
             'idEstado' => 'required|exists:estados_trabajo,id'
@@ -151,91 +149,10 @@ class TrabajoController extends Controller
      */
     public function show($id)
     {
-        // Buscar por ID primero, luego por slug si no se encuentra
-        $trabajo = Trabajos::with([
-            'cliente',
-            'detallesTrabajo.servicio', 
-            'detallesTrabajo.pago',
-            'estado',
-            'estadoPago',
-            'usuario',
-            'responsable'
-        ])->where('id', $id)->orWhere('slug', $id)->firstOrFail();
-
-        // Transformar los datos para el frontend de manera similar a RegistrarTrabajoController
-        $trabajoData = [
-            'id' => $trabajo->id,
-            'slug' => $trabajo->slug,
-            'idCliente' => $trabajo->idCliente,
-            'idResponsable' => $trabajo->idResponsable,
-            'fechaRegistro' => $trabajo->fechaRegistro,
-            'fechaEntrega' => $trabajo->fechaEntrega,
-            'idEstado' => $trabajo->idEstado,
-            'idEstadoPago' => $trabajo->idEstadoPago,
-            'cliente' => $trabajo->cliente ? [
-                'id' => $trabajo->cliente->id,
-                'nombre' => $trabajo->cliente->nombre,
-                'apellido' => $trabajo->cliente->apellido,
-                'telefono' => $trabajo->cliente->telefono,
-                'email' => $trabajo->cliente->correoElectronico,
-            ] : null,
-            'estado' => $trabajo->estado ? [
-                'id' => $trabajo->estado->id,
-                'nombre' => $trabajo->estado->nombre,
-            ] : null,
-            'estadoPago' => $trabajo->estadoPago ? [
-                'id' => $trabajo->estadoPago->id,
-                'nombre' => $trabajo->estadoPago->nombre,
-            ] : null,
-            'responsable' => $trabajo->responsable ? [
-                'id' => $trabajo->responsable->id,
-                'nombre' => $trabajo->responsable->nombre,
-                'apellido' => $trabajo->responsable->apellido,
-            ] : null,
-            'detallesTrabajo' => $trabajo->detallesTrabajo ? $trabajo->detallesTrabajo->map(function($detalle) {
-                return [
-                    'id' => $detalle->id,
-                    'idTrabajo' => $detalle->idTrabajo,
-                    'idServicio' => $detalle->idServicio,
-                    'idPago' => $detalle->idPago,
-                    'cantidad' => $detalle->cantidad,
-                    'descuento' => $detalle->descuento ?? 0,
-                    'descripcion' => $detalle->descripcion,
-                    'tamano' => $detalle->tamano,
-                    'color' => $detalle->color,
-                    'modelo' => $detalle->modelo,
-                    'tipoDocumento' => $detalle->tipoDocumento,
-                    'tipoEvento' => $detalle->tipoEvento,
-                    'servicio' => $detalle->servicio ? [
-                        'id' => $detalle->servicio->id,
-                        'nombreServicio' => $detalle->servicio->nombreServicio,
-                        'precioReferencial' => $detalle->servicio->precioReferencial,
-                        'descripcion' => $detalle->servicio->descripcion,
-                    ] : null,
-                    'pago' => $detalle->pago ? [
-                        'idPago' => $detalle->pago->idPago,
-                        'idTrabajo' => $detalle->pago->idTrabajo,
-                        'total' => $detalle->pago->total,
-                        'aCuenta' => $detalle->pago->aCuenta,
-                        'saldo' => $detalle->pago->saldo,
-                    ] : null,
-                ];
-            }) : [],
-        ];
-
-        // Debug: Log de datos que se envían a Inertia
-        \Illuminate\Support\Facades\Log::info('Datos del trabajo para Show (TrabajoController):', [
-            'trabajo_id' => $trabajo->id,
-            'cliente' => $trabajo->cliente ? $trabajo->cliente->toArray() : 'NO HAY CLIENTE',
-            'detallesTrabajo' => $trabajo->detallesTrabajo ? $trabajo->detallesTrabajo->toArray() : 'NO HAY DETALLES',
-            'detallesTrabajo_count' => $trabajo->detallesTrabajo ? $trabajo->detallesTrabajo->count() : 0,
-            'estadoPago' => $trabajo->estadoPago ? $trabajo->estadoPago->toArray() : 'NO HAY ESTADO PAGO',
-            'estado' => $trabajo->estado ? $trabajo->estado->toArray() : 'NO HAY ESTADO',
-            'trabajoData_completo' => $trabajoData
-        ]);
-
-        return Inertia::render('RegistrarTrabajos/Show', [
-            'trabajo' => $trabajoData,
+        $trabajo = Trabajos::with(['cliente', 'servicio', 'usuario', 'estado'])->findOrFail($id);
+        
+        return Inertia::render('Trabajos/Show', [
+            'trabajo' => $trabajo
         ]);
     }
 
@@ -269,7 +186,7 @@ class TrabajoController extends Controller
         $validator = Validator::make($request->all(), [
             'idCliente' => 'required|exists:clientes,id',
             'idServicio' => 'required|exists:servicios,id',
-            'idUsuario' => 'required|exists:usuarios,id',
+            'idResponsable' => 'nullable|exists:usuarios,id',
             'fechaRegistro' => 'required|date',
             'fechaEntrega' => 'nullable|date|after_or_equal:fechaRegistro',
             'idEstado' => 'required|exists:estados_trabajo,id'

@@ -7,7 +7,7 @@
         <label class="block text-sm font-medium text-white mb-2">Total</label>
         <input 
           type="text" 
-          :value="totalCalculado + ' Bs'" 
+          :value="isLoading ? 'Calculando...' : (totalCalculado + ' Bs')" 
           disabled
           class="w-full bg-[#0a192f]/50 text-white border border-white/20 rounded-md shadow-md"
         />
@@ -16,8 +16,8 @@
         <label class="block text-sm font-medium text-white mb-2">A Cuenta *</label>
         <input 
           type="number" 
-          :value="modelValue.aCuenta"
-          @input="updateACuenta($event.target.value)"
+          :value="aCuentaDisplay"
+          @input="handleACuentaInput"
           @blur="validarACuenta"
           min="0"
           step="0.01"
@@ -30,7 +30,7 @@
         <label class="block text-sm font-medium text-white mb-2">Saldo</label>
         <input 
           type="text" 
-          :value="saldoCalculado + ' Bs'" 
+          :value="isLoading ? 'Calculando...' : (props.saldoCalculado + ' Bs')" 
           disabled
           class="w-full bg-[#0a192f]/50 text-white border border-white/20 rounded-md shadow-md"
         />
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -66,29 +66,88 @@ const props = defineProps({
   totalCalculado: {
     type: Number,
     default: 0
+  },
+  saldoCalculado: {
+    type: Number,
+    default: 0
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
 const emit = defineEmits(['update:modelValue', 'pago-change'])
 
-const saldoCalculado = computed(() => {
-  return Math.max(0, props.totalCalculado - (props.modelValue.aCuenta || 0))
+// Variable local para el input
+const aCuentaLocal = ref(props.modelValue.aCuenta || 0)
+
+// Computed para mostrar el valor
+const aCuentaDisplay = computed(() => {
+  return aCuentaLocal.value
 })
 
+// Watcher para sincronizar con el prop
+watch(() => props.modelValue.aCuenta, (newValue) => {
+  console.log('🔄 PagoSection: modelValue.aCuenta cambió a:', newValue)
+  aCuentaLocal.value = newValue || 0
+  console.log('🔄 PagoSection: aCuentaLocal actualizado a:', aCuentaLocal.value)
+})
+
+// ✅ Usar el saldo calculado que viene del componente padre
+// const saldoCalculado = computed(() => {
+//   return Math.max(0, props.totalCalculado - (props.modelValue.aCuenta || 0))
+// })
+
+const handleACuentaInput = (event) => {
+  const valor = event.target.value
+  console.log('🔄 handleACuentaInput llamado con:', valor, 'tipo:', typeof valor)
+  
+  // Actualizar la variable local
+  aCuentaLocal.value = valor
+  
+  // Convertir a número para el backend
+  let aCuenta = 0
+  if (valor !== '' && valor !== null && valor !== undefined) {
+    aCuenta = parseFloat(valor) || 0
+  }
+  
+  console.log('✅ Emitiendo nuevo valor aCuenta:', aCuenta)
+  const newData = { ...props.modelValue, aCuenta }
+  console.log('✅ Datos completos a emitir:', newData)
+  emit('update:modelValue', newData)
+  emit('pago-change', newData)
+}
+
 const updateACuenta = (valor) => {
-  const aCuenta = parseFloat(valor) || ''
-  emit('update:modelValue', { ...props.modelValue, aCuenta })
-  emit('pago-change', { ...props.modelValue, aCuenta })
+  console.log('🔄 updateACuenta llamado con:', valor, 'tipo:', typeof valor)
+  
+  // El v-model ya maneja la actualización, solo emitir el evento
+  emit('pago-change', { ...props.modelValue })
 }
 
 const validarACuenta = () => {
-  const aCuenta = props.modelValue.aCuenta
-  if (aCuenta === '' || aCuenta === null || aCuenta === undefined || aCuenta < 0) {
-    emit('update:modelValue', { ...props.modelValue, aCuenta: 0 })
-    emit('pago-change', { ...props.modelValue, aCuenta: 0 })
-  } else if (aCuenta > props.totalCalculado) {
-    emit('update:modelValue', { ...props.modelValue, aCuenta: props.totalCalculado })
-    emit('pago-change', { ...props.modelValue, aCuenta: props.totalCalculado })
+  let aCuenta = props.modelValue.aCuenta
+  
+  // Asegurar que siempre sea un número
+  if (aCuenta === '' || aCuenta === null || aCuenta === undefined) {
+    aCuenta = 0
+  } else {
+    aCuenta = parseFloat(aCuenta) || 0
+  }
+  
+  // Validar límites
+  if (aCuenta < 0) {
+    aCuenta = 0
+  } else if (aCuenta > props.totalCalculado && props.totalCalculado > 0) {
+    aCuenta = props.totalCalculado
+  }
+  
+  // Actualizar si cambió
+  if (aCuenta !== props.modelValue.aCuenta) {
+    console.log('🔄 Validando aCuenta, actualizando a:', aCuenta)
+    emit('update:modelValue', { ...props.modelValue, aCuenta })
+    emit('pago-change', { ...props.modelValue, aCuenta })
   }
 }
 

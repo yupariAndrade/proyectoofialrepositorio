@@ -63,18 +63,7 @@
           required 
         />
       </div>
-      <div>
-        <label class="block text-sm font-medium mb-2">Estado del Trabajo</label>
-        <select 
-          :value="modelValue.estadoTrabajo"
-          @change="onEstadoTrabajoChange"
-          class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
-        >
-          <option v-for="estado in estadosTrabajo" :key="estado.id" :value="estado.id">
-            {{ estado.nombre }}
-          </option>
-        </select>
-      </div>
+      <!-- ✅ ARQUITECTURA MVC - Estado del trabajo se maneja desde la lista, no desde el formulario -->
     </div>
   </div>
 </template>
@@ -91,10 +80,7 @@ const props = defineProps({
     type: Array,
     required: true
   },
-  estadosTrabajo: {
-    type: Array,
-    required: true
-  },
+  // ✅ ARQUITECTURA MVC - Prop eliminada: Estados de trabajo ya no se necesitan en el formulario
   fechaRegistro: {
     type: String,
     required: true
@@ -119,9 +105,5 @@ const onFechaEntregaChange = (event) => {
   emit('trabajo-change', { ...props.modelValue, fechaEntrega })
 }
 
-const onEstadoTrabajoChange = (event) => {
-  const estadoTrabajo = event.target.value
-  emit('update:modelValue', { ...props.modelValue, estadoTrabajo })
-  emit('trabajo-change', { ...props.modelValue, estadoTrabajo })
-}
+// ✅ ARQUITECTURA MVC - Función eliminada: Estado del trabajo se maneja desde la lista
 </script>

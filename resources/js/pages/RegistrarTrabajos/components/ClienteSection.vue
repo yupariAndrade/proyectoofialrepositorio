@@ -18,7 +18,7 @@
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-white mb-2">Número de Referencia</label>
+        <label class="block text-sm font-medium text-white mb-2">Teléfono del Cliente</label>
         <input 
           type="text" 
           :value="clienteSeleccionado?.telefono || ''" 
@@ -47,11 +47,17 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'cliente-change'])
 
 const clienteSeleccionado = computed(() => {
-  return props.clientes.find(cliente => cliente.id == props.modelValue.cliente)
+  console.log('🔍 Buscando cliente con ID:', props.modelValue.cliente)
+  console.log('🔍 Clientes disponibles:', props.clientes)
+  const cliente = props.clientes.find(cliente => cliente.id == props.modelValue.cliente)
+  console.log('🔍 Cliente encontrado:', cliente)
+  return cliente
 })
 
 const onClienteChange = (event) => {
   const nuevoCliente = event.target.value
+  console.log('🔄 Cliente cambiado a:', nuevoCliente)
+  console.log('🔄 Emitiendo update:modelValue con cliente:', nuevoCliente)
   emit('update:modelValue', { ...props.modelValue, cliente: nuevoCliente })
   emit('cliente-change', nuevoCliente)
 }

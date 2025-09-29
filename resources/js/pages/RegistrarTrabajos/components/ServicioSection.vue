@@ -17,7 +17,7 @@
       </button>
     </div>
     
-    <div v-for="(servicio, index) in modelValue.servicios" :key="`servicio-${index}-${servicio.idServicio}`" class="mb-6 p-4 bg-[#0a192f]/50 rounded-lg border border-white/10">
+    <div v-for="(servicio, index) in modelValue.servicios" :key="`servicio-${index}-${modelValue.servicios.length}`" class="mb-6 p-4 bg-[#0a192f]/50 rounded-lg border border-white/10">
       <div class="flex justify-between items-center mb-4">
         <h4 class="text-md font-medium text-white">Servicio {{ index + 1 }}</h4>
         <button 
@@ -124,24 +124,6 @@
             class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" 
           />
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Tipo de Documento</label>
-          <input 
-            :value="servicio.detalles.tipoDocumento"
-            @input="updateDetalle(index, 'tipoDocumento', $event.target.value)"
-            type="text" 
-            class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" 
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Tipo de Evento</label>
-          <input 
-            :value="servicio.detalles.tipoEvento"
-            @input="updateDetalle(index, 'tipoEvento', $event.target.value)"
-            type="text" 
-            class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" 
-          />
-        </div>
         <div class="md:col-span-2">
           <label class="block text-sm font-medium mb-2">Descripción</label>
           <textarea 
@@ -157,7 +139,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch, nextTick } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -206,11 +188,12 @@ const updateDetalle = (index, campo, valor) => {
 }
 
 const agregarOtroServicio = () => {
-  console.log('ServicioSection: emitir agregarServicio')
+  console.log('🔄 ServicioSection: Emitiendo evento agregarServicio')
   emit('agregarServicio')
 }
 
 const eliminarServicio = (index) => {
+  console.log('🔄 ServicioSection: Emitiendo evento eliminarServicio')
   emit('eliminarServicio', index)
 }
 
@@ -244,4 +227,13 @@ const validarDescuento = (index) => {
     emit('update:modelValue', { ...props.modelValue, servicios: nuevosServicios })
   }
 }
+
+// Watcher para forzar reactividad cuando cambien los servicios
+watch(() => props.modelValue.servicios, (newServicios) => {
+  console.log('🔄 ServicioSection: Servicios cambiaron:', newServicios.length)
+  // Forzar re-renderizado
+  nextTick(() => {
+    console.log('🔄 ServicioSection: Re-renderizado completado')
+  })
+}, { deep: true })
 </script>

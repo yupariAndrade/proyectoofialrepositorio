@@ -69,7 +69,7 @@ declare module '@inertiajs/vue3' {
     removeError: (field: keyof T) => void
   }
 
-  export function router: {
+  export const router: {
     get: (url: string, options?: any) => void
     post: (url: string, options?: any) => void
     put: (url: string, options?: any) => void

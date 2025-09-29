@@ -17,12 +17,12 @@ class Trabajos extends Model
 
     protected $fillable = [
         'idCliente',
-        'idUsuario',
         'idResponsable',
         'fechaRegistro',
         'fechaEntrega',
         'idEstado',
         'idEstadoPago',
+        'observaciones',
         'slug',
     ];
 
@@ -81,11 +81,6 @@ class Trabajos extends Model
         return $this->belongsTo(Usuarios::class, 'idResponsable');
     }
 
-    // 🔗 Relación: Un trabajo pertenece a un usuario
-    public function usuario(): BelongsTo
-    {
-        return $this->belongsTo(Usuarios::class, 'idUsuario');
-    }
 
     // 🔗 Relación: Un trabajo tiene un estado
     public function estado(): BelongsTo
@@ -111,6 +106,74 @@ class Trabajos extends Model
         return $this->hasMany(Pagos::class, 'idTrabajo');
     }
 
-
+    // 💰 MÉTODOS DE CÁLCULO (Nuevos - Compatibles con frontend existente)
     
+    /**
+     * Calcular el total del trabajo (suma de todos los subtotales)
+     */
+    public function calcularTotal(): float
+    {
+        return $this->detallesTrabajo->sum(function($detalle) {
+            return $detalle->calcularSubtotal();
+        });
+    }
+    
+    /**
+     * Calcular el total pagado (suma de todos los pagos)
+     */
+    public function calcularTotalPagado(): float
+    {
+        return $this->pagos->sum('monto');
+    }
+    
+    /**
+     * Calcular el saldo pendiente
+     */
+    public function calcularSaldo(): float
+    {
+        $total = $this->calcularTotal();
+        $pagado = $this->calcularTotalPagado();
+        
+        return max(0, $total - $pagado);
+    }
+    
+    /**
+     * Determinar el estado de pago basado en el saldo
+     */
+    public function determinarEstadoPago(): int
+    {
+        $saldo = $this->calcularSaldo();
+        $pagado = $this->calcularTotalPagado();
+        
+        if ($saldo == 0) {
+            return 3; // Completado
+        } elseif ($pagado == 0) {
+            return 4; // Cancelado
+        } else {
+            return 2; // Parcial
+        }
+    }
+    
+    /**
+     * Verificar si el trabajo está completamente pagado
+     */
+    public function estaCompletamentePagado(): bool
+    {
+        return $this->calcularSaldo() == 0;
+    }
+    
+    /**
+     * Obtener el porcentaje de pago
+     */
+    public function getPorcentajePago(): float
+    {
+        $total = $this->calcularTotal();
+        $pagado = $this->calcularTotalPagado();
+        
+        if ($total == 0) {
+            return 0;
+        }
+        
+        return ($pagado / $total) * 100;
+    }
 }

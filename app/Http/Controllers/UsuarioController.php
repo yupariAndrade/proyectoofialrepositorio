@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Usuarios;
 use App\Models\Roles;
+use App\Http\Requests\StoreUsuarioRequest;
+use App\Http\Requests\UpdateUsuarioRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -32,26 +34,21 @@ class UsuarioController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreUsuarioRequest $request)
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:100', // NO único (puede haber varios "Carlos")
-            'apellidoPaterno' => 'nullable|string|max:100', // NO único (hermanos comparten apellido)
-            'apellidoMaterno' => 'nullable|string|max:100', // NO único (hermanos comparten apellido)
-            'ci' => 'nullable|string|max:20|unique:usuarios,ci', // ÚNICO (cada persona tiene CI único)
-            'telefono' => 'nullable|string|max:20|unique:usuarios,telefono', // ÚNICO (cada persona tiene teléfono único)
-            'direccion' => 'nullable|string|max:255', // NO único (muchas personas pueden vivir en el mismo lugar)
-            'email' => 'nullable|email|max:150|unique:usuarios,email', // ÚNICO (cada persona tiene email único)
-            'password' => 'nullable|string|min:6|max:255',
-            'fechaIngreso' => 'nullable|date', // NO único (varios empleados pueden empezar el mismo día)
-            'fechaFinal' => 'nullable|date', // Solo este campo acepta nulos
-            'estado' => 'required|boolean',
-            'idRol' => 'required|exists:roles,id'
-        ]);
-
+        $validated = $request->validated();
+        
+        // Hashear la contraseña si se proporciona
+        if (isset($validated['password']) && !empty($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        }
+        
         $usuario = Usuarios::create($validated);
+        
+        // Asignar idResponsable igual al id del usuario (auto-incrementable)
+        $usuario->update(['idResponsable' => $usuario->id]);
 
-        return redirect()->back()->with('success', 'Usuario registrado exitosamente');
+        return redirect()->route('usuarios')->with('success', 'Usuario registrado exitosamente');
     }
 
     /** Mostrar detalles */
@@ -72,28 +69,22 @@ class UsuarioController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateUsuarioRequest $request, $id)
     {
         $usuario = Usuarios::findOrFail($id);
-
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:100', // NO único (puede haber varios "Carlos")
-            'apellidoPaterno' => 'nullable|string|max:100', // NO único (hermanos comparten apellido)
-            'apellidoMaterno' => 'nullable|string|max:100', // NO único (hermanos comparten apellido)
-            'ci' => 'nullable|string|max:20|unique:usuarios,ci,' . $id, // ÚNICO (cada persona tiene CI único)
-            'telefono' => 'nullable|string|max:20|unique:usuarios,telefono,' . $id, // ÚNICO (cada persona tiene teléfono único)
-            'direccion' => 'nullable|string|max:255', // NO único (muchas personas pueden vivir en el mismo lugar)
-            'email' => 'nullable|email|max:150|unique:usuarios,email,' . $id, // ÚNICO (cada persona tiene email único)
-            'password' => 'nullable|string|min:6|max:255',
-            'fechaIngreso' => 'nullable|date', // NO único (varios empleados pueden empezar el mismo día)
-            'fechaFinal' => 'nullable|date', // Solo este campo acepta nulos
-            'estado' => 'required|boolean',
-            'idRol' => 'required|exists:roles,id'
-        ]);
-
+        $validated = $request->validated();
+        
+        // Hashear la contraseña si se proporciona y no está vacía
+        if (isset($validated['password']) && !empty($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        } else {
+            // Si no se proporciona contraseña, mantener la actual
+            unset($validated['password']);
+        }
+        
         $usuario->update($validated);
 
-        return redirect()->back()->with('success', 'Usuario actualizado exitosamente');
+        return redirect()->route('usuarios')->with('success', 'Usuario actualizado exitosamente');
     }
 
     public function destroy($id)

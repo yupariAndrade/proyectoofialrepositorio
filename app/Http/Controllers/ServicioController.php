@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Servicios;
+use App\Http\Requests\StoreServicioRequest;
+use App\Http\Requests\UpdateServicioRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +22,7 @@ class ServicioController extends Controller
         return Servicios::with('usuario')->get();
     }
 
-    public function store(Request $request)
+    public function store(StoreServicioRequest $request)
     {
         // Obtener el usuario autenticado
         $usuario = Auth::user();
@@ -29,15 +31,8 @@ class ServicioController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión para crear servicios');
         }
 
-        // Usar las reglas del modelo
-        $validated = $request->validate(Servicios::rules($usuario->id));
-
-        // Verificación manual adicional para duplicados usando el método del modelo
-        if (Servicios::existeDuplicado($validated['nombreServicio'])) {
-            return redirect()->back()
-                           ->withInput()
-                           ->withErrors(['nombreServicio' => 'Ya existe un servicio con este nombre en el sistema']);
-        }
+        // Obtener datos validados del Form Request
+        $validated = $request->validated();
 
         // Asignar automáticamente el usuario autenticado
         $validated['idUsuario'] = $usuario->id;
@@ -49,7 +44,7 @@ class ServicioController extends Controller
 
         Servicios::create($validated);
 
-        return redirect()->back()->with('success', 'Servicio registrado exitosamente');
+        return redirect()->route('servicios')->with('success', 'Servicio registrado exitosamente');
     }
 
     /**
@@ -64,7 +59,9 @@ class ServicioController extends Controller
         }
 
         $nombreServicio = $request->input('nombreServicio');
-        $existe = Servicios::where('nombreServicio', $nombreServicio)->exists();
+        $existe = Servicios::where('nombreServicio', $nombreServicio)
+                          ->where('idUsuario', $usuario->id)
+                          ->exists();
 
         return response()->json([
             'existe' => $existe,
@@ -112,7 +109,18 @@ class ServicioController extends Controller
         return Servicios::with('usuario')->findOrFail($id);
     }
 
-    public function update(Request $request, $id)
+    public function edit($id)
+    {
+        $servicio = Servicios::findOrFail($id);
+        $usuarios = \App\Models\Usuarios::all(); // Para el select de usuarios si es necesario
+        
+        return inertia('Servicios/Edit', [
+            'servicio' => $servicio,
+            'usuarios' => $usuarios
+        ]);
+    }
+
+    public function update(UpdateServicioRequest $request, $id)
     {
         $servicio = Servicios::findOrFail($id);
         $usuario = Auth::user()->load('rol');
@@ -126,15 +134,8 @@ class ServicioController extends Controller
             return redirect()->route('servicios')->with('error', 'No tiene permisos para editar este servicio');
         }
 
-        // Usar las reglas del modelo con exclusión del ID actual
-        $validated = $request->validate(Servicios::rules($usuario->id, $id));
-
-        // Verificación manual adicional para duplicados usando el método del modelo
-        if (Servicios::existeDuplicado($validated['nombreServicio'], null, $id)) {
-            return redirect()->back()
-                           ->withInput()
-                           ->withErrors(['nombreServicio' => 'Ya existe un servicio con este nombre en el sistema']);
-        }
+        // Obtener datos validados del Form Request
+        $validated = $request->validated();
 
         // Mantener el usuario original que creó el servicio
         $validated['idUsuario'] = $servicio->idUsuario;
@@ -153,7 +154,7 @@ class ServicioController extends Controller
 
         $servicio->update($validated);
 
-        return redirect()->back()->with('success', 'Servicio actualizado exitosamente');
+        return redirect()->route('servicios')->with('success', 'Servicio actualizado exitosamente');
     }
 
     public function destroy($id)

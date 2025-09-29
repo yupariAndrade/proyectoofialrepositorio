@@ -90,7 +90,7 @@
                     <div>
                       <label class="block text-sm font-medium text-white mb-2">Cliente *</label>
                       <select 
-                        v-model="form.cliente" 
+                        v-model="originalForm.cliente" 
                         @change="onClienteChange"
                         class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
                         required
@@ -131,7 +131,7 @@
                     </button>
                   </div>
                   
-                  <div v-for="(servicio, index) in form.servicios" :key="index" class="mb-6 p-4 bg-[#0a192f]/50 rounded-lg border border-white/10">
+                  <div v-for="(servicio, index) in form.servicios" :key="`servicio-${index}-${form.servicios.length}`" class="mb-6 p-4 bg-[#0a192f]/50 rounded-lg border border-white/10">
                     <div class="flex justify-between items-center mb-4">
                       <h4 class="text-md font-medium text-white">Servicio {{ index + 1 }}</h4>
                       <button 
@@ -198,7 +198,7 @@
                         <label class="block text-sm font-medium text-white mb-2">Subtotal</label>
                         <input 
                           type="text" 
-                          :value="calcularSubtotal(servicio).toFixed(2) + ' Bs'" 
+                          :value="getSubtotalDisplay(servicio)" 
                           disabled
                           class="w-full bg-[#0a192f]/80 text-white border border-white/20 rounded-md shadow-md"
                         />
@@ -218,14 +218,6 @@
                       <div>
                         <label class="block text-sm font-medium mb-2">Modelo</label>
                         <input v-model="servicio.detalles.modelo" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium mb-2">Tipo de Documento</label>
-                        <input v-model="servicio.detalles.tipoDocumento" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium mb-2">Tipo de Evento</label>
-                        <input v-model="servicio.detalles.tipoEvento" type="text" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" />
                       </div>
                       <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-2">Descripción</label>
@@ -247,7 +239,7 @@
                         <span class="text-gray-400 text-xs">(Opcional)</span>
                       </label>
                       <select 
-                        v-model="form.idResponsable"
+                        v-model="originalForm.idResponsable"
                         class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
                       >
                         <option value="">Sin responsable asignado</option>
@@ -289,14 +281,9 @@
                     </div>
                     <div>
                       <label class="block text-sm font-medium mb-2">Fecha de Entrega *</label>
-                      <input v-model="form.fechaEntrega" type="date" :min="fechaRegistro" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" required />
+                      <input v-model="originalForm.fechaEntrega" type="date" :min="fechaRegistro" class="w-full bg-[#0a192f]/50 rounded-md border border-white/20 shadow-md focus:ring-cyan-400 focus:border-cyan-400" required />
                     </div>
-                    <div>
-                      <label class="block text-sm font-medium mb-2">Estado del Trabajo</label>
-                      <select v-model="form.estadoTrabajo" class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400">
-                        <option v-for="estado in estadosTrabajo" :key="estado.id" :value="estado.id">{{ estado.nombre }}</option>
-                      </select>
-                    </div>
+                    <!-- ✅ ARQUITECTURA MVC - Estado del trabajo se maneja desde la lista, no desde el formulario -->
                   </div>
                 </div>
 
@@ -317,7 +304,7 @@
                       <label class="block text-sm font-medium text-white mb-2">A Cuenta *</label>
                       <input 
                         type="number" 
-                        v-model="form.aCuenta"
+                        v-model="originalForm.aCuenta"
                         min="0"
                         step="0.01"
                         class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400"
@@ -336,7 +323,7 @@
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-white mb-2">Estado del Pago</label>
-                      <select v-model="form.idEstadoPago" class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400">
+                      <select v-model="originalForm.idEstadoPago" class="w-full bg-[#0a192f]/80 text-white border border-cyan-500 rounded-md shadow-md focus:ring-cyan-400 focus:border-cyan-400">
                         <option v-for="estado in estadosPago" :key="estado.id" :value="estado.id">{{ estado.nombre }}</option>
                       </select>
                     </div>
@@ -396,10 +383,11 @@ const props = defineProps({
 })
 
 // Estado del formulario - Inicializar con datos reales
-const form = useForm({
+const originalForm = useForm({
   cliente: '',
   servicios: [
     {
+      id: Date.now() + Math.random(), // ID único para reactividad
       idServicio: '',
       cantidad: 1,
       descuento: 0,
@@ -407,18 +395,24 @@ const form = useForm({
         tamano: '',
         color: '',
         modelo: '',
-        tipoDocumento: '',
-        tipoEvento: '',
         descripcion: '',
       }
     }
   ],
   fechaEntrega: '',
-  estadoTrabajo: 1,
   idResponsable: '',
   aCuenta: 0,
   idEstadoPago: 2,
 })
+
+// Crear una versión reactiva del form para la UI que se sincronice con originalForm
+const form = ref(originalForm)
+
+// Watcher para sincronizar cambios del form de Inertia con la versión reactiva
+watch(() => originalForm.servicios, (newServicios) => {
+  console.log('🔄 Sincronizando servicios en Edit.vue:', newServicios)
+  form.value = { ...originalForm }
+}, { deep: true })
 
 // Variables reactivas
 const isSubmitting = ref(false)
@@ -427,61 +421,92 @@ const showSuccessMessage = ref(false)
 const showErrorMessage = ref(false)
 const messageText = ref('')
 
+// ✅ ARQUITECTURA MVC - Los totales se calculan en el backend
+const totalCalculado = ref(0)
+const saldoCalculado = ref(0)
+
 // Debug: Log de datos recibidos
+// ✅ ARQUITECTURA MVC - Función para cargar datos del trabajo
+const cargarDatosTrabajo = async (trabajoData) => {
+  if (!trabajoData) return
+  
+  console.log('🔄 Cargando datos del trabajo:', trabajoData)
+  
+  // Actualizar el formulario
+  console.log('🔄 Edit.vue: Cargando datos del cliente:', trabajoData.idCliente)
+  originalForm.cliente = trabajoData.idCliente || ''
+  originalForm.idResponsable = trabajoData.idResponsable || ''
+  originalForm.fechaEntrega = trabajoData.fechaEntrega || ''
+  console.log('✅ Edit.vue: originalForm.cliente actualizado a:', originalForm.cliente)
+    // ✅ ARQUITECTURA MVC - Estado se maneja desde la lista, no desde el formulario
+  originalForm.aCuenta = trabajoData.aCuenta || 0
+  originalForm.idEstadoPago = trabajoData.idEstadoPago || 2
+  
+  // ✅ ARQUITECTURA MVC - Usar datos calculados del backend
+  totalCalculado.value = trabajoData.total || 0
+  saldoCalculado.value = trabajoData.saldo || 0
+
+  // ✅ ARQUITECTURA MVC - Cargar servicios desde detallesTrabajo del backend
+  if (trabajoData.detallesTrabajo && trabajoData.detallesTrabajo.length > 0) {
+    originalForm.servicios = trabajoData.detallesTrabajo.map((detalle, index) => ({
+      id: Date.now() + Math.random() + index, // ID único para reactividad
+      idServicio: detalle.idServicio || '',
+      cantidad: detalle.cantidad || 1,
+      descuento: detalle.descuento || 0,
+      detalles: {
+        tamano: detalle.tamano || '',
+        color: detalle.color || '',
+        modelo: detalle.modelo || '',
+        descripcion: detalle.descripcion || '',
+      }
+    }))
+    
+    console.log('✅ Servicios cargados desde backend:', originalForm.servicios)
+  } else {
+    console.log('❌ No hay detallesTrabajo en el trabajo:', trabajoData)
+  }
+  
+  console.log('✅ Formulario actualizado:', originalForm)
+}
+
 onMounted(() => {
-  console.log('Datos del trabajo recibidos:', props.trabajo)
-  console.log('Detalle del trabajo:', props.trabajo?.detallesTrabajo)
-  console.log('Pago del trabajo:', props.trabajo?.detallesTrabajo?.pago)
-  console.log('Estado del pago:', props.trabajo?.estadoPago)
+  console.log('🚀 COMPONENTE MONTADO - Datos iniciales:')
+  console.log('🚀 Props trabajo completo:', props.trabajo)
+  
+  // Cargar datos iniciales si ya están disponibles
+  if (props.trabajo) {
+    cargarDatosTrabajo(props.trabajo)
+  }
 })
 
 // Watcher para actualizar el formulario cuando los datos lleguen
 watch(() => props.trabajo, async (newTrabajo) => {
+  console.log('🔄 Watcher ejecutado - Props trabajo:', props.trabajo)
+  console.log('🔄 Watcher ejecutado - NewTrabajo:', newTrabajo)
+  
   if (newTrabajo) {
     console.log('🔄 Watcher ejecutado - Actualizando formulario con datos:', newTrabajo)
     
-    // Actualizar el formulario
-    form.cliente = newTrabajo.idCliente || ''
-    form.idResponsable = newTrabajo.idResponsable || ''
-    form.fechaEntrega = newTrabajo.fechaEntrega || ''
-    form.estadoTrabajo = newTrabajo.idEstado || 1
-    form.aCuenta = newTrabajo.detallesTrabajo?.[0]?.pago?.aCuenta || 0
-    form.idEstadoPago = newTrabajo.idEstadoPago || 2
-
-    // Actualizar servicios - Cargar TODOS los servicios del trabajo
-    if (newTrabajo.detallesTrabajo && newTrabajo.detallesTrabajo.length > 0) {
-      form.servicios = newTrabajo.detallesTrabajo.map(detalle => ({
-        idServicio: detalle.idServicio || '',
-        cantidad: detalle.cantidad || 1,
-        descuento: detalle.descuento || 0, // Usar el descuento real del detalle
-        detalles: {
-          tamano: detalle.tamano || '',
-          color: detalle.color || '',
-          modelo: detalle.modelo || '',
-          tipoDocumento: detalle.tipoDocumento || '',
-          tipoEvento: detalle.tipoEvento || '',
-          descripcion: detalle.descripcion || '',
-        }
-      }))
-    }
-    
-    console.log('🔄 Datos del trabajo recibidos:', newTrabajo)
-    console.log('🔄 Formulario actualizado:', form)
+    // ✅ ARQUITECTURA MVC - Usar función centralizada para cargar datos
+    await cargarDatosTrabajo(newTrabajo)
     
     // Esperar a que Vue procese los cambios
     await nextTick()
     
     console.log('✅ Formulario actualizado después de nextTick:', form)
+    
+    // ✅ Calcular totales desde el backend
+    calcularTotalesDesdeBackend()
   }
 }, { immediate: true, deep: true })
 
-// Watcher para detectar cambios en los servicios y forzar reactividad
-watch(() => form.servicios, (newServicios) => {
+// Watcher para detectar cambios en los servicios y recalcular totales
+watch(() => originalForm.servicios, (newServicios) => {
   console.log('🔄 Servicios cambiaron:', newServicios)
-  // Forzar recálculo del total
-  nextTick(() => {
-    console.log('🔄 Total recalculado después de cambio:', totalCalculado.value)
-  })
+  // Recalcular totales desde el backend
+  setTimeout(() => {
+    calcularTotalesDesdeBackend()
+  }, 100)
 }, { deep: true })
 
 // Computed properties
@@ -490,44 +515,74 @@ const trabajoOriginal = computed(() => {
 })
 
 const clienteSeleccionado = computed(() => {
-  return props.clientes.find(c => c.id === form.cliente)
+  return props.clientes.find(c => c.id === originalForm.cliente)
 })
 
 const usuarioSeleccionado = computed(() => {
-  return props.usuarios.find(u => u.id === form.idResponsable)
+  return props.usuarios.find(u => u.id === originalForm.idResponsable)
 })
 
-const totalCalculado = computed(() => {
-  const total = form.servicios.reduce((total, servicio) => {
-    const subtotal = calcularSubtotal(servicio)
-    return total + subtotal
-  }, 0)
-  console.log('💵 Total calculado:', {
-    servicios: form.servicios.length,
-    total: total
+// ✅ ARQUITECTURA MVC - Función para calcular totales desde el backend
+const calcularTotalesDesdeBackend = async () => {
+  try {
+    const response = await axios.post('/api/trabajos/calcular-totales', {
+      servicios: originalForm.servicios,
+      aCuenta: originalForm.aCuenta || 0
+    })
+    
+    totalCalculado.value = response.data.total
+    saldoCalculado.value = response.data.saldo
+    
+    console.log('✅ Totales calculados desde backend:', {
+      total: response.data.total,
+      saldo: response.data.saldo
+    })
+  } catch (error) {
+    console.error('❌ Error calculando totales desde backend:', error)
+    // Fallback: calcular localmente si el backend falla
+    let total = 0
+    originalForm.servicios.forEach(servicio => {
+      if (servicio.idServicio) {
+        const subtotalBruto = calcularSubtotalBruto(servicio)
+        const descuento = parseFloat(servicio.descuento) || 0
+        total += subtotalBruto - descuento
+      }
+    })
+    totalCalculado.value = total
+    saldoCalculado.value = Math.max(0, total - (originalForm.aCuenta || 0))
+  }
+}
+
+// Watcher para recalcular cuando cambie aCuenta
+
+watch(() => originalForm.aCuenta, (newACuenta) => {
+  // ✅ ARQUITECTURA MVC - Recalcular saldo cuando cambie aCuenta
+  saldoCalculado.value = Math.max(0, totalCalculado.value - (newACuenta || 0))
+  console.log('🔄 Saldo recalculado:', {
+    total: totalCalculado.value,
+    aCuenta: newACuenta,
+    saldo: saldoCalculado.value
   })
-  return total
-})
-
-const saldoCalculado = computed(() => {
-  return Math.max(0, totalCalculado.value - form.aCuenta)
 })
 
 // Métodos
 const onClienteChange = () => {
   // Resetear campos relacionados
-  form.servicios.forEach(servicio => {
+  originalForm.servicios.forEach(servicio => {
     servicio.detalles.tamano = ''
     servicio.detalles.color = ''
     servicio.detalles.modelo = ''
-    servicio.detalles.tipoDocumento = ''
-    servicio.detalles.tipoEvento = ''
     servicio.detalles.descripcion = ''
   })
 }
 
 const agregarOtroServicio = () => {
-  form.servicios.push({
+  console.log('🔄 agregarOtroServicio ejecutándose en Edit.vue...')
+  console.log('🔄 Servicios actuales:', originalForm.servicios.length)
+  console.log('🔄 Servicios actuales (datos):', originalForm.servicios)
+  
+  const nuevoServicio = {
+    id: Date.now() + Math.random(), // ID único para reactividad
     idServicio: '',
     cantidad: 1,
     descuento: 0,
@@ -535,22 +590,43 @@ const agregarOtroServicio = () => {
       tamano: '',
       color: '',
       modelo: '',
-      tipoDocumento: '',
-      tipoEvento: '',
       descripcion: '',
     }
+  }
+  
+  // Crear nuevo array de servicios
+  const nuevosServicios = [...originalForm.servicios, nuevoServicio]
+  
+  // Actualizar directamente el array de servicios
+  originalForm.servicios = nuevosServicios
+  
+  console.log('✅ Nuevo servicio agregado en Edit.vue. Total servicios:', originalForm.servicios.length)
+  console.log('✅ Servicios actualizados:', originalForm.servicios)
+  
+  // Forzar actualización de la versión reactiva con nextTick
+  nextTick(() => {
+    form.value = { ...originalForm }
+    console.log('✅ Form reactivo actualizado en Edit.vue')
   })
 }
 
 const eliminarServicio = (index) => {
-  if (form.servicios.length > 1) {
-    form.servicios.splice(index, 1)
+  if (originalForm.servicios.length > 1) {
+    const nuevosServicios = originalForm.servicios.filter((_, i) => i !== index)
+    originalForm.servicios = nuevosServicios
+    console.log('✅ Servicio eliminado en Edit.vue. Total servicios:', originalForm.servicios.length)
+    
+    // Forzar actualización de la versión reactiva
+    form.value = { ...originalForm }
   }
 }
 
 const obtenerServicioInfo = (idServicio) => {
   return props.servicios.find(s => s.id === idServicio)
 }
+
+// ✅ ARQUITECTURA MVC - Los cálculos vienen del backend
+const subtotalesCache = ref({})
 
 const calcularSubtotalBruto = (servicio) => {
   const servicioInfo = obtenerServicioInfo(servicio.idServicio)
@@ -560,32 +636,23 @@ const calcularSubtotalBruto = (servicio) => {
   return precioOriginal * cantidad
 }
 
-const calcularSubtotal = (servicio) => {
+const getSubtotalDisplay = (servicio) => {
   const subtotalBruto = calcularSubtotalBruto(servicio)
   const descuento = parseFloat(servicio.descuento) || 0
-  const subtotalFinal = Math.max(0, subtotalBruto - descuento)
-  console.log('🧮 Subtotal calculado (nueva lógica):', {
-    servicio: obtenerServicioInfo(servicio.idServicio)?.nombreServicio,
-    subtotalBruto: subtotalBruto,
-    descuento: descuento,
-    subtotalFinal: subtotalFinal
-  })
-  return subtotalFinal
-}
-
-// Mantener función anterior para compatibilidad
-const calcularPrecioFinalPorUnidad = (servicio) => {
-  const servicioInfo = obtenerServicioInfo(servicio.idServicio)
-  if (!servicioInfo) return 0
-  return parseFloat(servicioInfo.precioReferencial)
+  const subtotal = subtotalBruto - descuento
+  return subtotal.toFixed(2) + ' Bs'
 }
 
 const validarDescuento = (servicio) => {
   const subtotalBruto = calcularSubtotalBruto(servicio)
-  if (servicio.descuento >= subtotalBruto && subtotalBruto > 0) {
-    servicio.descuento = subtotalBruto - 0.01
+  const descuento = parseFloat(servicio.descuento) || 0
+  
+  // Validar que el descuento no sea mayor al subtotal bruto
+  if (descuento > subtotalBruto) {
+    servicio.descuento = subtotalBruto
   }
-  console.log('🔍 Descuento validado (nueva lógica):', {
+  
+  console.log('🔍 Descuento validado:', {
     servicio: obtenerServicioInfo(servicio.idServicio)?.nombreServicio,
     descuento: servicio.descuento,
     subtotalBruto: subtotalBruto
@@ -594,17 +661,17 @@ const validarDescuento = (servicio) => {
 
 const submitForm = () => {
   // Validación del lado del cliente
-  if (!form.cliente) {
+  if (!originalForm.cliente) {
     alert('Por favor selecciona un cliente')
     return
   }
   
-  if (!form.servicios.some(s => s.idServicio)) {
+  if (!originalForm.servicios.some(s => s.idServicio)) {
     alert('Por favor selecciona al menos un servicio')
     return
   }
   
-  if (!form.fechaEntrega) {
+  if (!originalForm.fechaEntrega) {
     alert('Por favor selecciona una fecha de entrega')
     return
   }
@@ -612,16 +679,29 @@ const submitForm = () => {
   // El responsable es opcional, no se valida
   
   // Validar campo aCuenta
-  if (form.aCuenta < 0) {
+  if (originalForm.aCuenta < 0) {
     alert('El monto a cuenta no puede ser negativo')
     return
   }
   
   isSubmitting.value = true
   
+  // Limpiar el campo 'id' temporal antes de enviar
+  const serviciosLimpios = originalForm.servicios.map(servicio => {
+    const { id, ...servicioSinId } = servicio
+    return servicioSinId
+  })
+  
+  // Crear una copia del form con servicios limpios
+  const formData = {
+    ...originalForm.data(),
+    servicios: serviciosLimpios
+  }
+  
   // Debug: verificar los datos del trabajo
   console.log('🔍 Props del trabajo:', props.trabajo)
   console.log('🔍 Slug del trabajo:', props.trabajo.slug)
+  console.log('📦 Servicios limpios:', serviciosLimpios)
   
   // Usar fetch directamente para evitar problemas con axios
   const slug = props.trabajo.slug
@@ -630,10 +710,10 @@ const submitForm = () => {
   console.log('🔗 URL construida:', url)
   
   console.log('🚀 Enviando petición PUT a:', url)
-  console.log('📦 Datos del formulario:', form.data())
+  console.log('📦 Datos del formulario:', formData)
   
-  // Usar form.put de Inertia como última alternativa
-  form.put(`/registrar-trabajos/${slug}`, {
+  // Usar form.put de Inertia con datos limpios
+  originalForm.transform(() => formData).put(`/registrar-trabajos/${slug}`, {
     onSuccess: () => {
       isSubmitting.value = false
       console.log('Trabajo actualizado exitosamente')

@@ -30,3 +30,14 @@ Route::post('/clientes/verificar-duplicados', [App\Http\Controllers\ClienteContr
 // Ruta para verificar campos únicos de clientes
 Route::post('/clientes/verificar-campo', [App\Http\Controllers\ClienteController::class, 'verificarCampo']);
 
+// Cálculos de trabajos
+Route::post('/trabajos/calcular-totales', [App\Http\Controllers\TrabajoCalculoController::class, 'calcularTotales']);
+Route::get('/trabajos/{id}/calcular-totales', [App\Http\Controllers\TrabajoCalculoController::class, 'calcularTotalesTrabajo']);
+Route::post('/trabajos/validar-descuento', [App\Http\Controllers\TrabajoCalculoController::class, 'validarDescuento']);
+
+// ✅ ARQUITECTURA MVC - Cambiar estado del trabajo (con autenticación web)
+Route::patch('/trabajos/{id}/estado', [App\Http\Controllers\RegistrarTrabajoController::class, 'cambiarEstado'])->middleware('web');
+
+// ✅ ARQUITECTURA MVC - Cancelar trabajo con observaciones (con autenticación web)
+Route::patch('/trabajos/{id}/cancelar', [App\Http\Controllers\RegistrarTrabajoController::class, 'cancelarTrabajo'])->middleware('web');
+

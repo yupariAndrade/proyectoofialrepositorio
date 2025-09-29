@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Clientes;
 use App\Models\Usuarios;
+use App\Http\Requests\StoreClienteRequest;
+use App\Http\Requests\UpdateClienteRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -22,28 +24,19 @@ class ClienteController extends Controller
         return Inertia::render('Clientes/Create');
     }
 
-    public function store(Request $request)
+    public function store(StoreClienteRequest $request)
     {
         // Obtener el usuario autenticado
         $usuario = Auth::user();
         
-        // Validar usando las reglas del modelo
-        $validated = $request->validate(Clientes::rules());
-        
-        // Verificar duplicados manualmente para mensajes más específicos
-        if (Clientes::existeDuplicado($validated['ci'], $validated['telefono'], $validated['correoElectronico'])) {
-            return redirect()->back()->withInput()->withErrors([
-                'ci' => 'Ya existe un cliente con este CI',
-                'telefono' => 'Ya existe un cliente con este teléfono',
-                'correoElectronico' => 'Ya existe un cliente con este correo electrónico'
-            ]);
-        }
+        // Obtener datos validados del Form Request
+        $validated = $request->validated();
         
         // Asignar automáticamente el usuario autenticado
         $validated['idUsuario'] = $usuario->id;
         
         Clientes::create($validated);
-        return redirect()->back()->with('success', 'Cliente registrado exitosamente');
+        return redirect()->route('clientes')->with('success', 'Cliente registrado exitosamente');
     }
 
     public function show(string $id)
@@ -59,27 +52,18 @@ class ClienteController extends Controller
         return Inertia::render('Clientes/Edit', ['cliente' => $cliente]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateClienteRequest $request, string $id)
     {
         $cliente = Clientes::findOrFail($id);
         
-        // Validar usando las reglas del modelo con exclusión del ID actual
-        $validated = $request->validate(Clientes::rules($id));
-        
-        // Verificar duplicados manualmente para mensajes más específicos
-        if (Clientes::existeDuplicado($validated['ci'], $validated['telefono'], $validated['correoElectronico'], $id)) {
-            return redirect()->back()->withInput()->withErrors([
-                'ci' => 'Ya existe un cliente con este CI',
-                'telefono' => 'Ya existe un cliente con este teléfono',
-                'correoElectronico' => 'Ya existe un cliente con este correo electrónico'
-            ]);
-        }
+        // Obtener datos validados del Form Request
+        $validated = $request->validated();
         
         // Mantener el usuario original que creó el cliente
         $validated['idUsuario'] = $cliente->idUsuario;
         
         $cliente->update($validated);
-        return redirect()->back()->with('success', 'Cliente actualizado exitosamente');
+        return redirect()->route('clientes')->with('success', 'Cliente actualizado exitosamente');
     }
 
     public function destroy(string $id)

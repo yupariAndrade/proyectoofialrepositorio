@@ -28,7 +28,7 @@
                   <option value="">Seleccionar trabajo</option>
                   <option v-for="trabajo in trabajos" :key="trabajo.id" :value="trabajo.id">
                     {{ trabajo.servicio?.nombreServicio || 'Servicio' }} — {{ (trabajo.cliente?.nombre || 'Cliente') + ' ' + (trabajo.cliente?.apellido || '') }}
-                  </option>
+                  </option> 
                 </select>
                 <div v-if="form.errors.idTrabajo" class="text-red-400 text-sm mt-1">{{ form.errors.idTrabajo }}</div>
               </div>
@@ -92,6 +92,8 @@ const form = useForm({ idTrabajo: '', idEstadoPago: '', monto: '', fecha: '', co
 
 const submit = () => { form.post(route('pagos.store'), { onSuccess: () => form.reset() }) }
 </script>
+
+
 
 
 

@@ -56,7 +56,7 @@
 
                 <!-- Componentes de las secciones -->
                 <ClienteSection 
-                  v-model="form" 
+                  v-model="originalForm" 
                   :clientes="clientes"
                   @cliente-change="onClienteChange"
                 />
@@ -72,17 +72,18 @@
                 />
 
                 <TrabajoSection 
-                  v-model="form" 
+                  v-model="originalForm" 
                   :usuarios="usuarios"
-                  :estados-trabajo="estadosTrabajo"
                   :fecha-registro="fechaRegistro"
                   @trabajo-change="onTrabajoChange"
                 />
 
                 <PagoSection 
-                  v-model="form" 
+                  v-model="originalForm"
                   :estados-pago="estadosPago"
-                  :total-calculado="totalCalculadoReactivo"
+                  :total-calculado="totalCalculado"
+                  :saldo-calculado="saldoCalculado"
+                  :is-loading="isLoading"
                   @pago-change="onPagoChange"
                 />
 
@@ -106,7 +107,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
@@ -120,7 +121,6 @@ const props = defineProps({
   clientes: Array,
   servicios: Array,
   usuarios: Array,
-  estadosTrabajo: Array,
   estadosPago: Array,
   clientePreSeleccionado: Object,
 })
@@ -129,16 +129,15 @@ const props = defineProps({
 const successMessage = ref('')
 const isSubmitting = ref(false)
 
-// Usar el composable para la lógica del formulario
+// ✅ Usar el composable con cálculos para UX (validaciones en backend)
 const {
   form: originalForm,
   clienteSeleccionado,
   totalCalculado,
   saldoCalculado,
+  isLoading,
   isFormValid,
   obtenerServicioInfo,
-  calcularPrecioFinalPorUnidad,
-  calcularSubtotal,
   onClienteChange,
   onServicioChange,
   agregarOtroServicio,
@@ -147,91 +146,90 @@ const {
   submitForm: originalSubmitForm
 } = useTrabajoForm(props)
 
-// Crear una versión reactiva del form para la UI
-const form = ref({ ...originalForm })
+// Crear una versión reactiva del form para la UI que se sincronice con originalForm
+const form = ref(originalForm)
 
-// Recalcular total basado en el form reactivo
-const totalCalculadoReactivo = computed(() => {
-  return form.value.servicios.reduce((total, servicio) => {
-    const servicioInfo = props.servicios?.find(serv => serv.id == servicio.idServicio)
-    if (!servicioInfo) return total
-    
-    // Nueva lógica: Subtotal = (Cantidad × Precio Referencial) - Descuento
-    const precioOriginal = parseFloat(servicioInfo.precioReferencial)
-    const cantidad = parseInt(servicio.cantidad) || 0
-    const descuento = parseFloat(servicio.descuento) || 0
-    const subtotalBruto = precioOriginal * cantidad
-    const subtotalFinal = Math.max(0, subtotalBruto - descuento)
-    
-    return total + subtotalFinal
-  }, 0)
+// Watcher para sincronizar cambios del form de Inertia con la versión reactiva
+watch(() => originalForm.servicios, (newServicios) => {
+  console.log('🔄 Sincronizando servicios en Create.vue:', newServicios)
+  form.value = { ...originalForm }
+}, { deep: true })
+
+// Watcher para sincronizar cambios de idResponsable
+watch(() => originalForm.idResponsable, (newIdResponsable) => {
+  console.log('🔄 Sincronizando idResponsable en Create.vue:', newIdResponsable)
+  form.value = { ...originalForm }
 })
 
-// Validación reactiva del formulario
-const isFormValidReactivo = computed(() => {
-  const tieneServicios = form.value.servicios.some(servicio => 
-    servicio.idServicio && servicio.cantidad > 0
-  )
-  // Responsable es opcional, solo validamos cliente, servicios y fecha de entrega
-  const esValido = form.value.cliente && tieneServicios && form.value.fechaEntrega
-  
-  console.log('Validación del formulario:', {
-    cliente: !!form.value.cliente,
-    servicios: tieneServicios,
-    responsable: !!form.value.idResponsable, // Mostrar si está asignado o no
-    fechaEntrega: !!form.value.fechaEntrega,
-    esValido
-  })
-  
-  return esValido
-})
+// ✅ ARQUITECTURA MVC CORRECTA
+// ✅ CÁLCULOS EN EL BACKEND - El servidor maneja toda la lógica
+// ✅ FRONTEND SOLO PRESENTACIÓN - Sin lógica de negocio
 
-// Métodos personalizados
-const onTrabajoChange = () => {
-  // Lógica adicional si es necesaria
-}
-
-const onPagoChange = () => {
-  // Lógica adicional si es necesaria
-}
-
-// Función para manejar agregar servicio
-const handleAgregarServicio = () => {
-  console.log('Create.vue: recibido evento agregarServicio')
-  const nuevoServicio = {
-    idServicio: '',
-    cantidad: 1,
-    descuento: 0.00,
-    detalles: {
-      tamano: '',
-      color: '',
-      modelo: '',
-      tipoDocumento: '',
-      tipoEvento: '',
-      descripcion: ''
-    }
-  }
-  form.value.servicios = [...form.value.servicios, nuevoServicio]
-  console.log('Servicios en form reactivo:', form.value.servicios.length)
-}
-
-// Función para manejar eliminar servicio
-const handleEliminarServicio = (index) => {
-  console.log('Create.vue: recibido evento eliminarServicio', index)
-  if (form.value.servicios.length > 1) {
-    form.value.servicios = form.value.servicios.filter((_, i) => i !== index)
-  }
-}
-
+// ✅ Funciones simplificadas - solo para UI
 const submitForm = () => {
-  console.log('submitForm ejecutándose...', form.value)
+  console.log('submitForm ejecutándose...', originalForm)
   isSubmitting.value = true
-  // Sincronizar el form reactivo con el form de Inertia
-  Object.assign(originalForm, form.value)
-  console.log('Form sincronizado:', originalForm)
+  // Usar directamente el form de Inertia
   originalSubmitForm()
   isSubmitting.value = false
 }
+
+// ✅ Funciones faltantes que el template necesita
+const handleAgregarServicio = () => {
+  console.log('🔄 Create.vue: handleAgregarServicio ejecutándose...')
+  console.log('🔄 Servicios actuales en originalForm:', originalForm.servicios.length)
+  
+  // Usar la función del composable
+  agregarOtroServicio()
+  
+  // Sincronizar con la versión reactiva
+  form.value = { ...originalForm }
+  
+  console.log('✅ Create.vue: Servicio agregado. Total servicios:', originalForm.servicios.length)
+}
+
+const handleEliminarServicio = (index) => {
+  console.log('🔄 Create.vue: handleEliminarServicio ejecutándose para índice:', index)
+  
+  // Usar la función del composable
+  eliminarServicio(index)
+  
+  // Sincronizar con la versión reactiva
+  form.value = { ...originalForm }
+  
+  console.log('✅ Create.vue: Servicio eliminado. Total servicios:', originalForm.servicios.length)
+}
+
+const onTrabajoChange = (trabajoData) => {
+  // Función para cambios en la sección de trabajo
+  console.log('🔄 Create.vue: Trabajo cambió:', trabajoData)
+  console.log('🔄 Create.vue: idResponsable recibido:', trabajoData?.idResponsable)
+  if (trabajoData) {
+    Object.assign(originalForm, trabajoData)
+    console.log('🔄 Create.vue: originalForm.idResponsable actualizado a:', originalForm.idResponsable)
+  }
+}
+
+const onPagoChange = (pagoData) => {
+  // Función para cambios en la sección de pago
+  console.log('🔄 Create.vue: Pago cambió:', pagoData)
+  console.log('🔄 Create.vue: originalForm.aCuenta antes:', originalForm.aCuenta)
+  
+  // Actualizar directamente el form de Inertia
+  if (pagoData.aCuenta !== undefined) {
+    console.log('🔄 Actualizando originalForm.aCuenta de:', originalForm.aCuenta, 'a:', pagoData.aCuenta)
+    originalForm.aCuenta = pagoData.aCuenta
+    console.log('✅ Create.vue: originalForm.aCuenta después:', originalForm.aCuenta)
+  }
+  if (pagoData.idEstadoPago !== undefined) {
+    originalForm.idEstadoPago = pagoData.idEstadoPago
+  }
+}
+
+// Computed para validación del formulario
+const isFormValidReactivo = computed(() => {
+  return isFormValid.value
+})
 
 // Fecha de registro (hoy)
 const fechaRegistro = new Date().toISOString().split('T')[0]

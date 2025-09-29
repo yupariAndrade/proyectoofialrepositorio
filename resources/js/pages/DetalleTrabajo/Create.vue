@@ -164,39 +164,6 @@
                   </div>
                 </div>
 
-                <!-- Tipo de Documento -->
-                <div>
-                  <label for="tipoDocumento" class="block text-sm font-medium text-slate-300 mb-2">
-                    Tipo de Documento
-                  </label>
-                  <input
-                    id="tipoDocumento"
-                    v-model="form.tipoDocumento"
-                    type="text"
-                    class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
-                    placeholder="Ej: DNI, Pasaporte, Certificado"
-                  />
-                  <div v-if="form.errors.tipoDocumento" class="text-red-400 text-sm mt-1">
-                    {{ form.errors.tipoDocumento }}
-                  </div>
-                </div>
-
-                <!-- Tipo de Evento -->
-                <div>
-                  <label for="tipoEvento" class="block text-sm font-medium text-slate-300 mb-2">
-                    Tipo de Evento
-                  </label>
-                  <input
-                    id="tipoEvento"
-                    v-model="form.tipoEvento"
-                    type="text"
-                    class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
-                    placeholder="Ej: Boda, Cumpleaños, Corporativo"
-                  />
-                  <div v-if="form.errors.tipoEvento" class="text-red-400 text-sm mt-1">
-                    {{ form.errors.tipoEvento }}
-                  </div>
-                </div>
 
                 <!-- Otros -->
                 <div class="md:col-span-2">
@@ -262,8 +229,6 @@ const form = useForm({
   color: '',
   modelo: '',
   cantidad: '',
-  tipoDocumento: '',
-  tipoEvento: '',
   otros: ''
 })
 

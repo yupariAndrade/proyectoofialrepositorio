@@ -124,9 +124,9 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label class="block text-sm font-medium text-gray-400 mb-1">Subtotal</label>
-                      <p class="text-xl font-bold text-green-400">
-                        {{ calcularSubtotal(detalle) }} Bs
-                      </p>
+                  <p class="text-xl font-bold text-green-400">
+                    {{ ((detalle.servicio?.precioReferencial || 0) - (detalle.descuento || 0)) * (detalle.cantidad || 1) }} Bs
+                  </p>
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-gray-400 mb-1">Descuento</label>
@@ -181,18 +181,6 @@
                       <label class="block text-sm font-medium text-gray-400 mb-1">Modelo</label>
                       <p class="text-white">
                         {{ detalle.modelo || 'No especificado' }}
-                      </p>
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium text-gray-400 mb-1">Tipo de Documento</label>
-                      <p class="text-white">
-                        {{ detalle.tipoDocumento || 'No especificado' }}
-                      </p>
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium text-gray-400 mb-1">Tipo de Evento</label>
-                      <p class="text-white">
-                        {{ detalle.tipoEvento || 'No especificado' }}
                       </p>
                     </div>
                     <div>
@@ -291,7 +279,7 @@
                 <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                 </svg>
-                💰 Estado de Pagos
+                Información del Pago
               </h3>
               
               <!-- Resumen de costos por servicio -->
@@ -305,7 +293,7 @@
                         <span class="text-white font-medium">{{ detalle.servicio?.nombreServicio }}</span>
                         <span class="text-gray-400 text-sm ml-2">({{ detalle.cantidad }} unidades)</span>
                       </div>
-                      <span class="text-green-400 font-semibold">{{ calcularSubtotal(detalle).toFixed(2) }} Bs</span>
+                      <span class="text-green-400 font-semibold">{{ (((detalle.servicio?.precioReferencial || 0) - (detalle.descuento || 0)) * (detalle.cantidad || 1)).toFixed(2) }} Bs</span>
                     </div>
                     <div v-if="detalle.descuento > 0" class="mt-2 text-xs text-orange-400">
                       Precio original: {{ (detalle.servicio?.precioReferencial * detalle.cantidad).toFixed(2) }} Bs - 
@@ -315,96 +303,35 @@
                 </div>
               </div>
               
-              <!-- Información actualizada del sistema de cuotas -->
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-[#0a192f]/50 p-4 rounded-lg border border-white/10">
-                  <label class="block text-sm font-medium text-gray-400 mb-1">Total del Trabajo</label>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-1">Total General</label>
                   <p class="text-2xl font-bold text-white">
-                    {{ trabajo.total || totalGeneralCalculado }} Bs
+                    {{ trabajo.total || 0 }} Bs
                   </p>
                 </div>
-                <div class="bg-[#0a192f]/50 p-4 rounded-lg border border-white/10">
-                  <label class="block text-sm font-medium text-gray-400 mb-1">Ya Pagado</label>
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-1">A Cuenta</label>
                   <p class="text-2xl font-bold text-green-400">
                     {{ trabajo.aCuenta || 0 }} Bs
                   </p>
                 </div>
-                <div class="bg-[#0a192f]/50 p-4 rounded-lg border border-white/10">
-                  <label class="block text-sm font-medium text-gray-400 mb-1">Saldo Pendiente</label>
-                  <p class="text-2xl font-bold" :class="getSaldoClass(trabajo.saldo || saldoCalculado)">
-                    {{ trabajo.saldo || saldoCalculado }} Bs
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-1">Saldo</label>
+                  <p class="text-2xl font-bold" :class="getSaldoClass(trabajo.saldo || 0)">
+                    {{ trabajo.saldo || 0 }} Bs
                   </p>
                 </div>
-                <div class="bg-[#0a192f]/50 p-4 rounded-lg border border-white/10">
+                <div>
                   <label class="block text-sm font-medium text-gray-400 mb-1">Estado del Pago</label>
-                  <span :class="getEstadoPagoClass(trabajo.estadoPago?.nombre)" class="text-lg font-semibold">
+                  <span :class="getEstadoPagoClass(trabajo.estadoPago?.nombre)">
                     {{ trabajo.estadoPago?.nombre || 'Sin pago' }}
                   </span>
                 </div>
               </div>
-              
-              <!-- Botón para agregar cuota (si hay saldo pendiente) -->
-              <div v-if="(trabajo.saldo || saldoCalculado) > 0" class="text-center">
-                <button 
-                  @click="mostrarFormularioCuota"
-                  class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 flex items-center mx-auto"
-                >
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                  </svg>
-                  Agregar Cuota
-                </button>
-              </div>
             </div>
           </div>
 
-          <!-- Historial de Cuotas -->
-          <div v-if="historialPagos && historialPagos.length > 0" class="bg-[#0c1d3a]/70 backdrop-blur-sm rounded-lg shadow overflow-hidden mb-6 border border-white/10">
-            <div class="p-6">
-              <h3 class="text-lg font-semibold mb-4 text-white flex items-center">
-                <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
-                📋 Historial de Cuotas
-              </h3>
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-700">
-                  <thead class="bg-[#0a192f]/50">
-                    <tr>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Fecha
-                      </th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Monto de Cuota
-                      </th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Saldo Después
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-[#0a192f]/30 divide-y divide-gray-700">
-                    <tr v-for="(pago, index) in historialPagos" :key="pago.idPago" class="hover:bg-[#0a192f]/50">
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
-                        {{ index + 1 }}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
-                        {{ formatDate(pago.created_at) }}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-400">
-                        +{{ pago.aCuenta }} Bs
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
-                        {{ pago.saldo }} Bs
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
 
         </div>
       </main>
@@ -449,85 +376,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal para Agregar Cuota -->
-    <div v-if="mostrarCuota" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-[#1a1a2e] rounded-lg p-6 w-full max-w-md mx-4">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-white">💰 Agregar Cuota</h3>
-          <button @click="cerrarModalCuota" class="text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        
-        <div class="space-y-4">
-          <!-- Información del trabajo -->
-          <div class="bg-[#0c1d3a] p-4 rounded-lg">
-            <h4 class="text-lg font-semibold text-white mb-3">📋 Información del Trabajo</h4>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <span class="text-gray-400">Cliente:</span>
-                <p class="text-white font-medium">{{ trabajo.cliente?.nombre }}</p>
-              </div>
-              <div>
-                <span class="text-gray-400">Total:</span>
-                <p class="text-white font-medium">{{ trabajo.total || totalGeneralCalculado }} Bs</p>
-              </div>
-              <div>
-                <span class="text-gray-400">Ya pagado:</span>
-                <p class="text-white font-medium">{{ trabajo.aCuenta || 0 }} Bs</p>
-              </div>
-              <div>
-                <span class="text-gray-400">Saldo pendiente:</span>
-                <p class="text-white font-medium">{{ trabajo.saldo || saldoCalculado }} Bs</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Formulario de cuota -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-white mb-2">Monto de la cuota:</label>
-              <input 
-                v-model="montoCuota" 
-                type="number" 
-                :max="trabajo.saldo || saldoCalculado"
-                step="0.01"
-                placeholder="Ej: 50.00"
-                class="w-full bg-[#0a192f] text-white border border-cyan-500 rounded-md px-3 py-2 focus:ring-cyan-400 focus:border-cyan-400"
-              >
-              <small class="text-gray-400">Máximo: {{ trabajo.saldo || saldoCalculado }} Bs</small>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-white mb-2">Estado de pago (opcional):</label>
-              <select v-model="nuevoEstadoPago" class="w-full bg-[#0a192f] text-white border border-cyan-500 rounded-md px-3 py-2 focus:ring-cyan-400 focus:border-cyan-400">
-                <option value="">Mantener estado actual</option>
-                <option v-for="estado in estadosPago" :key="estado.id" :value="estado.id">
-                  {{ estado.nombre }}
-                </option>
-              </select>
-            </div>
-          </div>
-          
-          <!-- Botones -->
-          <div class="flex space-x-3 pt-4">
-            <button @click="cerrarModalCuota" class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
-              Cancelar
-            </button>
-            <button 
-              @click="procesarCuota" 
-              :disabled="!montoCuota || parseFloat(montoCuota) <= 0 || parseFloat(montoCuota) > (trabajo.saldo || saldoCalculado)"
-              class="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-md hover:from-yellow-600 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              💰 Procesar Cuota
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </AppShell>
 </template>
 
@@ -541,8 +389,6 @@ import AppSidebar from '@/components/AppSidebar.vue'
 // Props
 const props = defineProps({
   trabajo: Object,
-  historialPagos: Array,
-  estadosPago: Array,
 })
 
 // Acceder a los mensajes flash
@@ -550,11 +396,6 @@ const page = usePage()
 
 // Estado para eliminación
 const mostrarModalEliminacion = ref(false)
-
-// Variables para el modal de cuota
-const mostrarCuota = ref(false)
-const montoCuota = ref('')
-const nuevoEstadoPago = ref('')
 
 // Debug: Verificar si el componente se está ejecutando
 console.log('🚀 Show.vue se está ejecutando')
@@ -567,6 +408,7 @@ console.log('🚀 Primer detalle:', props.trabajo?.detallesTrabajo?.[0])
 // Computed properties
 const trabajo = computed(() => {
   console.log('🔍 Datos del trabajo recibidos:', props.trabajo)
+  console.log('🔍 Trabajo completo:', props.trabajo)
   console.log('🔍 Detalles del trabajo:', props.trabajo?.detallesTrabajo)
   console.log('🔍 Detalles del trabajo length:', props.trabajo?.detallesTrabajo?.length)
   console.log('🔍 Servicios:', props.trabajo?.detallesTrabajo?.map(d => d.servicio))
@@ -574,38 +416,15 @@ const trabajo = computed(() => {
   console.log('🔍 Estado del pago:', props.trabajo?.estadoPago)
   console.log('🔍 Cliente:', props.trabajo?.cliente)
   console.log('🔍 Estado:', props.trabajo?.estado)
+  console.log('🔍 Total:', props.trabajo?.total)
+  console.log('🔍 A Cuenta:', props.trabajo?.aCuenta)
+  console.log('🔍 Saldo:', props.trabajo?.saldo)
   return props.trabajo
 })
 
 
-// Calcular subtotal de un servicio
-const calcularSubtotal = (detalle) => {
-  if (!detalle || !detalle.servicio) return 0
-  const precioUnitario = detalle.servicio.precioReferencial || 0
-  const cantidad = detalle.cantidad || 1
-  const descuento = detalle.descuento || 0
-  return (precioUnitario - descuento) * cantidad
-}
-
-// Calcular total general de todos los servicios
-const totalGeneralCalculado = computed(() => {
-  if (!trabajo.value?.detallesTrabajo) return 0
-  return trabajo.value.detallesTrabajo.reduce((total, detalle) => {
-    return total + calcularSubtotal(detalle)
-  }, 0)
-})
-
-// Calcular saldo
-const saldoCalculado = computed(() => {
-  const total = totalGeneralCalculado.value
-  const aCuenta = trabajo.value?.detallesTrabajo?.[0]?.pago?.aCuenta || 0
-  return Math.max(0, total - aCuenta)
-})
-
-// Historial de pagos
-const historialPagos = computed(() => {
-  return props.historialPagos || []
-})
+// ✅ ARQUITECTURA MVC - Los totales se calculan en el backend
+// No se necesitan funciones de cálculo en el frontend
 
 // Métodos
 const formatDate = (date) => {
@@ -677,50 +496,6 @@ const eliminarTrabajo = () => {
         alert(errorMessage)
       },
     })
-  }
-}
-
-// Funciones para el modal de cuota
-const mostrarFormularioCuota = () => {
-  montoCuota.value = ''
-  nuevoEstadoPago.value = ''
-  mostrarCuota.value = true
-}
-
-const cerrarModalCuota = () => {
-  mostrarCuota.value = false
-  montoCuota.value = ''
-  nuevoEstadoPago.value = ''
-}
-
-const procesarCuota = async () => {
-  if (!montoCuota.value) return
-  
-  try {
-    const response = await fetch(`/trabajos/${props.trabajo.id}/cuota`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-      },
-      body: JSON.stringify({
-        monto: parseFloat(montoCuota.value),
-        nuevoEstadoPago: nuevoEstadoPago.value || null
-      })
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success) {
-        // Recargar la página para mostrar los datos actualizados
-        window.location.reload()
-      }
-    } else {
-      alert('❌ Error al procesar la cuota')
-    }
-  } catch (error) {
-    console.error('Error al procesar cuota:', error)
-    alert('❌ Error al procesar la cuota')
   }
 }
 </script>

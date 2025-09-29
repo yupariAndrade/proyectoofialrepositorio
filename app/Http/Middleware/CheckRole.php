@@ -20,8 +20,13 @@ class CheckRole
 
         $usuario = Auth::user();
         
-        // Verificar si el usuario tiene el rol requerido
-        if (!$usuario->hasRole($role)) {
+        // Verificar si el usuario está activo
+        if (!$usuario->estado) {
+            abort(403, 'Tu cuenta está inactiva. Contacta al administrador.');
+        }
+        
+        // Verificar rol directamente
+        if (!$usuario->rol || $usuario->rol->nombre !== $role) {
             abort(403, 'No tienes permisos para acceder a esta página.');
         }
 

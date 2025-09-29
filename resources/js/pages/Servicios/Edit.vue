@@ -22,15 +22,6 @@
 
       <!-- Formulario más ancho y compacto -->
       <div class="max-w-7xl mx-auto px-6 py-8 -mt-4 relative z-10">
-        <!-- Mensaje de Éxito Temporal -->
-        <div v-if="showSuccessMessage" class="mb-6 p-4 bg-green-900/80 border border-green-400/50 text-green-200 rounded-xl backdrop-blur-sm animate-pulse">
-          <div class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-            </svg>
-            <span class="font-medium">{{ successMessage }}</span>
-          </div>
-        </div>
 
         <div class="bg-gradient-to-br from-black/80 via-gray-900/80 to-black/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-red-500/30 p-8 relative overflow-hidden">
           <!-- Efectos de fondo -->
@@ -55,7 +46,7 @@
             </div>
           </div>
           
-          <form @submit.prevent="actualizarServicio" class="relative z-10 space-y-6">
+          <form @submit.prevent="submit" class="relative z-10 space-y-6">
             <!-- Grid de 2 columnas para hacer el formulario más ancho -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <!-- Nombre del Servicio -->
@@ -104,12 +95,13 @@
                     v-model="form.precioReferencial" 
                     type="text" 
                     pattern="[0-9]+(\.[0-9]{1,2})?"
+                    inputmode="numeric"
                     maxlength="8"
                     required 
-                    @input="validarPrecio"
+                    @input="form.precioReferencial = form.precioReferencial.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')"
                     :class="[
                       'w-full px-4 py-3 bg-black/60 border-2 rounded-xl text-white placeholder-gray-400 focus:ring-4 transition-all duration-300 shadow-lg backdrop-blur-sm',
-                      $page.props.errors?.precioReferencial || precioInvalido
+                      $page.props.errors?.precioReferencial
                         ? 'border-red-500 focus:ring-red-500/30 focus:border-red-400' 
                         : 'border-gray-600 focus:ring-red-500/30 focus:border-red-400'
                     ]"
@@ -117,13 +109,12 @@
                   />
                   <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-xl pointer-events-none"></div>
                 </div>
-                <div class="text-xs text-gray-400 mt-1">Formato: 123.45 (máximo 6 dígitos + 2 decimales)</div>
-                <p v-if="$page.props.errors?.precioReferencial || precioInvalido" class="mt-2 text-sm text-red-400 flex items-center gap-2">
+                <div v-if="$page.props.errors?.precioReferencial" class="mt-2 text-sm text-red-400 flex items-center gap-2">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
-                  {{ $page.props.errors?.precioReferencial || 'Solo se permiten números y un punto decimal' }}
-                </p>
+                  {{ $page.props.errors.precioReferencial }}
+                </div>
               </div>
             </div>
 
@@ -265,8 +256,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { router, Link, usePage } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { useForm, Link, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppContent from '@/components/AppContent.vue'
@@ -277,87 +268,33 @@ const props = defineProps({
   usuarios: { type: Array, required: true }
 })
 
-const form = ref({ 
-  nombreServicio: '', 
-  precioReferencial: '', 
-  descripcion: '', 
-  estado: true, 
-  imagenReferencia: null 
+// Usar useForm con los datos del servicio
+const form = useForm({
+  nombreServicio: props.servicio.nombreServicio || '',
+  precioReferencial: props.servicio.precioReferencial || '',
+  descripcion: props.servicio.descripcion || '',
+  estado: Boolean(props.servicio.estado),
+  imagenReferencia: null
 })
-const previewImage = ref(null)
-const showSuccessMessage = ref(false)
-const successMessage = ref('')
-const precioInvalido = ref(false)
 
-onMounted(() => {
-  const s = props.servicio || {}
-  form.value = { 
-    nombreServicio: s.nombreServicio || '', 
-    precioReferencial: s.precioReferencial || '', 
-    descripcion: s.descripcion || '', 
-    estado: Boolean(s.estado), 
-    imagenReferencia: null 
-  }
-})
+const previewImage = ref('')
 
 const seleccionarImagen = (event) => {
   const input = event.target
   if (input && input.files && input.files[0]) {
-    form.value.imagenReferencia = input.files[0]
+    form.imagenReferencia = input.files[0]
     previewImage.value = URL.createObjectURL(input.files[0])
   }
 }
 
-const validarPrecio = (event) => {
-  const valor = event.target.value
-  // Solo permitir números y un punto decimal
-  const valorLimpio = valor.replace(/[^0-9.]/g, '')
-  
-  // Evitar múltiples puntos decimales
-  const partes = valorLimpio.split('.')
-  if (partes.length > 2) {
-    form.value.precioReferencial = partes[0] + '.' + partes.slice(1).join('')
-  } else {
-    form.value.precioReferencial = valorLimpio
-  }
-  
-  // Validar formato final
-  const precioPattern = /^\d{1,6}(\.\d{1,2})?$/
-  precioInvalido.value = form.value.precioReferencial !== '' && !precioPattern.test(form.value.precioReferencial)
-}
-
-const actualizarServicio = () => {
-  if (!form.value.nombreServicio || !form.value.precioReferencial) {
-    alert('⚠️ Nombre y precio son obligatorios')
-    return
-  }
-  
-  // Validar formato de precio
-  const precioPattern = /^\d{1,6}(\.\d{1,2})?$/
-  if (!precioPattern.test(form.value.precioReferencial)) {
-    alert('⚠️ El precio debe tener máximo 6 dígitos y 2 decimales (ej: 150.50)')
-    return
-  }
-  
-  const fd = new FormData()
-  fd.append('_method', 'PUT')
-  fd.append('nombreServicio', form.value.nombreServicio)
-  fd.append('precioReferencial', String(form.value.precioReferencial))
-  fd.append('descripcion', form.value.descripcion || '')
-  fd.append('estado', form.value.estado ? '1' : '0')
-  
-  if (form.value.imagenReferencia) {
-    fd.append('imagenReferencia', form.value.imagenReferencia)
-  }
-  
-  router.post(route('servicios.update', props.servicio.id), fd, { 
-    forceFormData: true,
+const submit = () => {
+  form.put(route('servicios.update', props.servicio.id), {
     onSuccess: () => {
-      showSuccessMessage.value = true
-      successMessage.value = 'Servicio actualizado exitosamente'
-      setTimeout(() => {
-        router.visit(route('servicios'))
-      }, 2000)
+      // Redirigir a la lista de servicios después de actualizar
+      window.location.href = route('servicios')
+    },
+    onError: (errors) => {
+      console.error('Errores de validación:', errors)
     }
   })
 }

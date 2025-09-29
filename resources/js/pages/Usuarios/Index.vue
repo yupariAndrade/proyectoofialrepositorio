@@ -31,6 +31,24 @@
 
       <!-- Main Content Area -->
       <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <!-- Notificaciones Flash -->
+        <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-900/80 border border-green-400/50 text-green-200 rounded-xl backdrop-blur-sm">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-medium">{{ $page.props.flash.success }}</span>
+          </div>
+        </div>
+        <div v-if="$page.props.flash?.error" class="mb-6 p-4 bg-red-900/80 border border-red-400/50 text-red-200 rounded-xl backdrop-blur-sm">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-medium">{{ $page.props.flash.error }}</span>
+          </div>
+        </div>
+
         <!-- Filtros y búsqueda -->
         <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-red-500/20 p-4 sm:p-6 mb-6 sm:mb-8">
           <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -248,10 +266,11 @@ const searchTerm = ref('')
 const filterRole = ref('')
 const availableRoles = computed(() => props.roles || [])
 
+// Usar directamente los usuarios del backend (ya vienen filtrados y ordenados)
 const filteredUsuarios = computed(() => {
   let filtered = props.usuarios || []
   
-  // Aplicar filtros
+  // Solo filtrado local básico para búsqueda en tiempo real
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase()
     filtered = filtered.filter((u) =>
@@ -266,13 +285,6 @@ const filteredUsuarios = computed(() => {
     filtered = filtered.filter((u) => String(u.idRol) === String(filterRole.value))
   }
   
-  // Ordenar por fecha de creación descendente (más reciente primero)
-  filtered.sort((a, b) => {
-    const dateA = new Date(a.created_at || 0)
-    const dateB = new Date(b.created_at || 0)
-    return dateB - dateA // Orden descendente
-  })
-  
   return filtered
 })
 
@@ -281,10 +293,21 @@ const generateReport = () => {
   window.open('/reportes/usuarios/pdf', '_blank');
 }
 
-const deleteUser = (id) => { if (confirm('¿Eliminar usuario?')) router.delete(window.route('usuarios.destroy', id)) }
+const deleteUser = (id) => { 
+  if (confirm('¿Eliminar usuario?')) 
+    router.delete(window.route('usuarios.destroy', id)) 
+}
+
+// Funciones de formateo simplificadas (solo presentación)
 const getInitials = (name) => (name || '').split(' ').map((n) => n[0]).join('').toUpperCase()
 const getRoleName = (idRol, rol) => (rol ? rol.nombre : 'Sin rol')
-const formatDate = (dateString) => { try { return new Date(dateString).toLocaleDateString('es-ES') } catch { return 'N/A' } }
+const formatDate = (dateString) => { 
+  try { 
+    return new Date(dateString).toLocaleDateString('es-ES') 
+  } catch { 
+    return 'N/A' 
+  } 
+}
 
 onMounted(() => {})
 </script> 
