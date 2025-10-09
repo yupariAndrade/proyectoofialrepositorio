@@ -94,7 +94,8 @@ const flashError = computed(() => {
 
 // Auto-dismiss para mensajes flash
 onMounted(() => {
-    if ($page.props.flash?.success || $page.props.flash?.error) {
+    const flash = $page.props.flash as FlashMessages | undefined;
+    if (flash?.success || flash?.error) {
         setTimeout(() => {
             showFlashMessage.value = false
         }, 4000) // Desaparece después de 4 segundos

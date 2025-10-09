@@ -187,16 +187,25 @@ class Usuarios extends Authenticatable
         parent::boot();
         
         static::creating(function ($usuario) {
-            if (!empty($usuario->password)) {
+            if (!empty($usuario->password) && !self::isHashed($usuario->password)) {
                 $usuario->password = bcrypt($usuario->password);
             }
         });
         
         static::updating(function ($usuario) {
-            // Siempre hashear si se proporciona una nueva contraseña
-            if (!empty($usuario->password)) {
+            // Solo hashear si la contraseña fue modificada y no está ya hasheada
+            if ($usuario->isDirty('password') && !empty($usuario->password) && !self::isHashed($usuario->password)) {
                 $usuario->password = bcrypt($usuario->password);
             }
         });
+    }
+
+    /**
+     * Verificar si una contraseña ya está hasheada
+     */
+    private static function isHashed($password)
+    {
+        // Los hashes de bcrypt tienen 60 caracteres y empiezan con $2y$
+        return strlen($password) === 60 && preg_match('/^\$2y\$/', $password);
     }
 }

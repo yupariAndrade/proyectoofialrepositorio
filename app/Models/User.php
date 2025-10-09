@@ -75,7 +75,6 @@ class User extends Authenticatable
             'fechaIngreso' => 'date',
             'fechaFinal' => 'date',
             'estado' => 'boolean',
-            'password' => 'hashed',
         ];
     }
 
