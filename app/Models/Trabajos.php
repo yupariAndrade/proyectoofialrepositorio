@@ -28,6 +28,11 @@ class Trabajos extends Model
 
     public $timestamps = true;
 
+    protected $casts = [
+        'fechaRegistro' => 'date',
+        'fechaEntrega' => 'date',
+    ];
+
     // 🎯 Método para generar slug automáticamente
     protected static function boot()
     {

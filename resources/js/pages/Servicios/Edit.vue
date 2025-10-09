@@ -22,6 +22,16 @@
 
       <!-- Formulario más ancho y compacto -->
       <div class="max-w-7xl mx-auto px-6 py-8 -mt-4 relative z-10">
+        
+        <!-- Mensaje de Éxito -->
+        <div v-if="$page.props.flash?.success" class="mb-4 flex items-center justify-center">
+          <div class="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-pulse">
+            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-semibold text-sm">{{ $page.props.flash.success }}</span>
+          </div>
+        </div>
 
         <div class="bg-gradient-to-br from-black/80 via-gray-900/80 to-black/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-red-500/30 p-8 relative overflow-hidden">
           <!-- Efectos de fondo -->

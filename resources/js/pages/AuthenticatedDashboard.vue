@@ -2,11 +2,14 @@
   <AppShell>
     <AppSidebar />
     
-    <div class="min-h-screen overflow-hidden bg-gradient-to-br from-red-950 via-red-900 to-red-800 flex-1">
+    <div class="min-h-screen overflow-hidden flex-1 relative">
+      <!-- Fondo animado de partículas -->
+      <ParticleBackground />
+      
+      <!-- Contenido principal -->
+      <div class="relative z-10">
       <!-- Header del Dashboard con logo y branding -->
       <div class="relative overflow-hidden">
-        <!-- Fondo decorativo con patrón sutil -->
-        <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23dc2626%22%20fill-opacity%3D%220.03%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
         
         <!-- Header principal -->
         <div class="relative p-6 pb-8">
@@ -360,6 +363,7 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
   </AppShell>
 </template>
@@ -368,6 +372,7 @@
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
+import ParticleBackground from '@/components/ParticleBackground.vue'
 
 interface Props {
   usuario?: {

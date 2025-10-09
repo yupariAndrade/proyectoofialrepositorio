@@ -41,3 +41,10 @@ Route::patch('/trabajos/{id}/estado', [App\Http\Controllers\RegistrarTrabajoCont
 // ✅ ARQUITECTURA MVC - Cancelar trabajo con observaciones (con autenticación web)
 Route::patch('/trabajos/{id}/cancelar', [App\Http\Controllers\RegistrarTrabajoController::class, 'cancelarTrabajo'])->middleware('web');
 
+// ✅ ARQUITECTURA MVC - Procesar pagos parciales (cuotas)
+Route::post('/cuotas', [App\Http\Controllers\CuotaController::class, 'store'])->middleware('web');
+
+// ✅ ARQUITECTURA MVC - Generar recibos
+Route::get('/recibos/{id}/vista-previa', [App\Http\Controllers\ReciboController::class, 'vistaPrevia'])->middleware('web');
+Route::get('/recibos/{id}/pdf', [App\Http\Controllers\ReciboController::class, 'generarRecibo'])->middleware('web');
+

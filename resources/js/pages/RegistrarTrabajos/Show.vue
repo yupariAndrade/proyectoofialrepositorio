@@ -332,6 +332,76 @@
             </div>
           </div>
 
+          <!-- Historial de Pagos Parciales -->
+          <div v-if="trabajo.pagos && trabajo.pagos.length > 0" class="bg-[#0c1d3a]/70 backdrop-blur-sm rounded-lg shadow mb-6 overflow-hidden border border-white/10">
+            <div class="p-6">
+              <h3 class="text-lg font-semibold mb-4 text-white flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                Historial de Pagos Parciales
+              </h3>
+              
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                  <thead class="bg-gray-800/50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Fecha de Pago
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Monto de Cuota
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        A Cuenta Acumulado
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Saldo Restante
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Estado
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-gray-900/50 divide-y divide-gray-700">
+                    <tr v-for="(pago, index) in trabajo.pagos" :key="pago.id" class="hover:bg-gray-800/50">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {{ formatDate(pago.created_at) }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-400">
+                        {{ calcularMontoCuota(pago, index) }} Bs
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-400">
+                        {{ formatPrecio(pago.aCuenta) }} Bs
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm" :class="getSaldoClass(pago.saldo)">
+                        {{ formatPrecio(pago.saldo) }} Bs
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span :class="getEstadoPagoClass(getEstadoPagoNombre(pago.saldo))">
+                          {{ getEstadoPagoNombre(pago.saldo) }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Progreso visual -->
+              <div class="mt-6">
+                <div class="flex justify-between text-sm text-gray-400 mb-2">
+                  <span>Progreso del Pago</span>
+                  <span>{{ Math.round((trabajo.aCuenta / trabajo.total) * 100) }}%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                    :style="{ width: Math.min((trabajo.aCuenta / trabajo.total) * 100, 100) + '%' }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
         </div>
       </main>
@@ -457,6 +527,34 @@ const getSaldoClass = (saldo) => {
   if (saldo === 0) return 'text-green-600'
   if (saldo > 0) return 'text-red-600'
   return 'text-gray-900'
+}
+
+// ✅ Funciones para el historial de pagos
+const formatPrecio = (precio) => {
+  const numPrecio = Number(precio) || 0
+  if (numPrecio % 1 === 0) {
+    return numPrecio.toString()
+  } else {
+    return numPrecio.toFixed(2)
+  }
+}
+
+const calcularMontoCuota = (pago, index) => {
+  if (index === 0) {
+    // Primer pago: es el monto inicial
+    return formatPrecio(pago.aCuenta)
+  } else {
+    // Pagos posteriores: diferencia entre aCuenta actual y anterior
+    const pagoAnterior = props.trabajo.pagos[index - 1]
+    const montoCuota = pago.aCuenta - pagoAnterior.aCuenta
+    return formatPrecio(montoCuota)
+  }
+}
+
+const getEstadoPagoNombre = (saldo) => {
+  if (saldo === 0) return 'Completado'
+  if (saldo > 0) return 'Parcial'
+  return 'Pendiente'
 }
 
 // Métodos de eliminación

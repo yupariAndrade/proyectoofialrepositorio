@@ -13,8 +13,8 @@ class Pagos extends Model
     protected $table = 'pagos';
     protected $primaryKey = 'idPago';
     
-    // Desactivar timestamps ya que la tabla no tiene created_at y updated_at
-    public $timestamps = false;
+    // Activar timestamps ya que la tabla ahora tiene created_at y updated_at
+    public $timestamps = true;
     
     protected $fillable = [
         'idTrabajo',

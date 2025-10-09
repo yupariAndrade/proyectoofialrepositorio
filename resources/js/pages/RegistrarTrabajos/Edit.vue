@@ -47,8 +47,7 @@
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
               <span class="font-medium">{{ messageText }}</span>
-            </div>
-          </div>
+            </div>          </div>
           
           <div v-if="showErrorMessage" class="mb-6 p-4 bg-red-900/80 border border-red-400/50 text-red-200 rounded-xl backdrop-blur-sm animate-fade-in">
             <div class="flex items-center gap-3">
@@ -416,7 +415,27 @@ watch(() => originalForm.servicios, (newServicios) => {
 
 // Variables reactivas
 const isSubmitting = ref(false)
-const fechaRegistro = props.trabajo?.fechaRegistro || new Date().toISOString().split('T')[0]
+const fechaRegistro = computed(() => {
+  const fecha = props.trabajo?.fechaRegistro
+  console.log('🔄 Edit.vue: fechaRegistro recibida:', fecha)
+  console.log('🔄 Edit.vue: tipo de fechaRegistro:', typeof fecha)
+  
+  if (!fecha) {
+    console.log('⚠️ Edit.vue: No hay fechaRegistro, usando fecha actual')
+    return new Date().toISOString().split('T')[0]
+  }
+  
+  // Si la fecha viene en formato YYYY-MM-DD, usarla directamente
+  if (typeof fecha === 'string' && fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.log('✅ Edit.vue: fechaRegistro en formato correcto:', fecha)
+    return fecha
+  }
+  
+  // Si viene en otro formato, convertirla
+  const fechaConvertida = new Date(fecha).toISOString().split('T')[0]
+  console.log('🔄 Edit.vue: fechaRegistro convertida:', fechaConvertida)
+  return fechaConvertida
+})
 const showSuccessMessage = ref(false)
 const showErrorMessage = ref(false)
 const messageText = ref('')
@@ -434,10 +453,28 @@ const cargarDatosTrabajo = async (trabajoData) => {
   
   // Actualizar el formulario
   console.log('🔄 Edit.vue: Cargando datos del cliente:', trabajoData.idCliente)
+  console.log('🔄 Edit.vue: fechaEntrega recibida:', trabajoData.fechaEntrega)
+  console.log('🔄 Edit.vue: tipo de fechaEntrega:', typeof trabajoData.fechaEntrega)
+  
   originalForm.cliente = trabajoData.idCliente || ''
   originalForm.idResponsable = trabajoData.idResponsable || ''
-  originalForm.fechaEntrega = trabajoData.fechaEntrega || ''
+  
+  // Manejar fechaEntrega con conversión de formato si es necesario
+  if (trabajoData.fechaEntrega) {
+    if (typeof trabajoData.fechaEntrega === 'string' && trabajoData.fechaEntrega.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      originalForm.fechaEntrega = trabajoData.fechaEntrega
+      console.log('✅ Edit.vue: fechaEntrega en formato correcto:', trabajoData.fechaEntrega)
+    } else {
+      originalForm.fechaEntrega = new Date(trabajoData.fechaEntrega).toISOString().split('T')[0]
+      console.log('🔄 Edit.vue: fechaEntrega convertida:', originalForm.fechaEntrega)
+    }
+  } else {
+    originalForm.fechaEntrega = ''
+    console.log('⚠️ Edit.vue: No hay fechaEntrega')
+  }
+  
   console.log('✅ Edit.vue: originalForm.cliente actualizado a:', originalForm.cliente)
+  console.log('✅ Edit.vue: originalForm.fechaEntrega actualizado a:', originalForm.fechaEntrega)
     // ✅ ARQUITECTURA MVC - Estado se maneja desde la lista, no desde el formulario
   originalForm.aCuenta = trabajoData.aCuenta || 0
   originalForm.idEstadoPago = trabajoData.idEstadoPago || 2
@@ -515,11 +552,13 @@ const trabajoOriginal = computed(() => {
 })
 
 const clienteSeleccionado = computed(() => {
-  return props.clientes.find(c => c.id === originalForm.cliente)
+  if (!props.clientes || !originalForm.cliente) return null
+  return props.clientes.find(c => c.id === originalForm.cliente) || null
 })
 
 const usuarioSeleccionado = computed(() => {
-  return props.usuarios.find(u => u.id === originalForm.idResponsable)
+  if (!props.usuarios || !originalForm.idResponsable) return null
+  return props.usuarios.find(u => u.id === originalForm.idResponsable) || null
 })
 
 // ✅ ARQUITECTURA MVC - Función para calcular totales desde el backend
@@ -754,7 +793,6 @@ const volverAIndex = () => {
   window.location.href = route('registrar-trabajos')
 }
 </script>
-
 <style scoped>
 /* Animación para las notificaciones */
 @keyframes fade-in {
@@ -774,3 +812,4 @@ const volverAIndex = () => {
 
 /* Estilos adicionales si son necesarios */
 </style>
+

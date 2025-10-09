@@ -126,7 +126,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Estados de Trabajo
     Route::controller(EstadoTrabajoController::class)->group(function () {
-        Route::get('/estados-trabajo', [EstadoTrabajoController::class, 'index'])->name('estados-trabajo');
+        Route::get('/estados-trabajo', [EstadoTrabajoController::class, 'index'])->name('estados-trabajo.index');
         Route::get('/estados-trabajo/create', [EstadoTrabajoController::class, 'create'])->name('estados-trabajo.create');
         Route::post('/estados-trabajo', [EstadoTrabajoController::class, 'store'])->name('estados-trabajo.store');
         Route::get('/estados-trabajo/{id}', [EstadoTrabajoController::class, 'show'])->name('estados-trabajo.show');

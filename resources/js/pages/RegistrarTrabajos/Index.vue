@@ -45,20 +45,39 @@
       </div>
     </div>
 
-      <!-- Success Message with Glass Effect -->
-      <div v-if="successMessage" class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl border border-green-400/30 rounded-2xl p-6 flex items-center shadow-2xl shadow-green-500/10">
-          <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-          </div>
-          <div>
-            <h3 class="text-green-400 font-bold text-lg">¡Éxito!</h3>
-            <p class="text-green-300">{{ successMessage }}</p>
+      <!-- ✅ ARQUITECTURA MVC - Success Message with Auto-Hide -->
+      <Transition
+        enter-active-class="transition-all duration-500 ease-out"
+        enter-from-class="opacity-0 transform -translate-y-4 scale-95"
+        enter-to-class="opacity-100 transform translate-y-0 scale-100"
+        leave-active-class="transition-all duration-300 ease-in"
+        leave-from-class="opacity-100 transform translate-y-0 scale-100"
+        leave-to-class="opacity-0 transform -translate-y-4 scale-95"
+      >
+        <div v-if="showSuccessMessage && successMessage" class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div class="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl border border-green-400/30 rounded-2xl p-6 flex items-center shadow-2xl shadow-green-500/10 animate-pulse">
+            <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-green-400 font-bold text-lg">¡Éxito!</h3>
+              <p class="text-green-300">{{ successMessage }}</p>
+            </div>
+            
+            <!-- Botón para cerrar manualmente -->
+            <button 
+              @click="showSuccessMessage = false" 
+              class="ml-auto text-green-400 hover:text-green-300 transition-colors duration-200"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
           </div>
         </div>
-      </div>
+      </Transition>
 
       <!-- Filters Section with Glass Effect -->
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -341,13 +360,12 @@
                       <div 
                         v-show="estadoDropdownAbierto === trabajo.id"
                         class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-slate-800/95 backdrop-blur-sm border border-slate-600/50 rounded-xl shadow-2xl z-[9999] overflow-hidden"
-                        @mouseleave="cerrarEstadoDropdown"
                       >
                         <div class="py-1">
                           <div 
                             v-for="estado in estadosTrabajo" 
                             :key="estado.id"
-                            @click="cambiarEstadoTrabajo(trabajo, estado.id)"
+                            @click="estado.id === 3 ? abrirModalCancelacion(trabajo) : cambiarEstadoTrabajo(trabajo, estado.id)"
                             class="px-4 py-3 text-sm cursor-pointer transition-all duration-200 hover:bg-slate-700/50 flex items-center justify-between group"
                             :class="estado.id === trabajo.idEstado ? 'bg-slate-700/30' : ''"
                           >
@@ -401,6 +419,17 @@
                      >
                       <svg class="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                       </svg>
+                     </button>
+                     
+                     <!-- ✅ ARQUITECTURA MVC - Botón Imprimir Recibo -->
+                     <button 
+                       @click="imprimirRecibo(trabajo)"
+                      class="group relative bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-2 rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-110 shadow-lg shadow-purple-500/25"
+                       title="Imprimir recibo"
+                     >
+                      <svg class="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                        </svg>
                      </button>
                      
@@ -497,9 +526,60 @@ import ModalCancelarTrabajo from './components/ModalCancelarTrabajo.vue'
 // Obtener la página actual
 const page = usePage()
 
-// Computed para el mensaje de éxito
-const successMessage = computed(() => {
-  return (page.props as any).flash?.success || null
+// ✅ ARQUITECTURA MVC - Mensaje de éxito con auto-ocultación
+const successMessage = ref('')
+const showSuccessMessage = ref(false)
+
+// Función para mostrar mensaje de éxito con auto-ocultación
+const showSuccess = (message: string) => {
+  successMessage.value = message
+  showSuccessMessage.value = true
+  
+  // Auto-ocultar después de 4 segundos
+  setTimeout(() => {
+    showSuccessMessage.value = false
+    // Limpiar el mensaje después de la animación
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 300)
+  }, 4000)
+}
+
+// Función para descargar recibo
+const descargarRecibo = (trabajoId: number) => {
+  window.open(`/api/recibos/${trabajoId}/pdf`, '_blank')
+}
+
+// ✅ ARQUITECTURA MVC - Función para imprimir recibo de un trabajo específico
+const imprimirRecibo = (trabajo: Trabajo) => {
+  console.log('🖨️ Imprimiendo recibo para trabajo:', trabajo.id)
+  window.open(`/api/recibos/${trabajo.id}/pdf`, '_blank')
+}
+
+// Detectar mensaje de éxito del flash
+watch(() => (page.props as any).flash?.success, (newMessage) => {
+  if (newMessage) {
+    showSuccess(newMessage)
+  }
+}, { immediate: true })
+
+// Detectar mensaje flash de la URL (para cancelación/restauración)
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const flashMessage = urlParams.get('flash')
+  if (flashMessage) {
+    showSuccess(decodeURIComponent(flashMessage))
+    // Limpiar la URL
+    window.history.replaceState({}, document.title, window.location.pathname)
+  }
+  
+  // Cerrar dropdown cuando se haga click fuera de él
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement
+    if (!target.closest('.relative.inline-block')) {
+      estadoDropdownAbierto.value = null
+    }
+  })
 })
 
 // Tipos de datos
@@ -600,7 +680,7 @@ watch(mostrarModalCancelacion, (newValue) => {
 // Debug: Log de estados de trabajo al cargar
 onMounted(() => {
   console.log('🔍 Estados de trabajo disponibles:', props.estadosTrabajo);
-  console.log('🔍 Buscando estado "Cancelado" (id: 5):', props.estadosTrabajo.find(e => e.id === 5));
+  console.log('🔍 Buscando estado "Cancelado" (id: 4):', props.estadosTrabajo.find(e => e.id === 4));
   console.log('🔍 Trabajos cargados:', props.trabajos.length);
   
   // Debug: Verificar responsables
@@ -704,11 +784,7 @@ const cerrarModalCuota = () => {
   trabajoSeleccionado.value = null
 }
 
-// ✅ Funciones para modal de cancelación
-const abrirModalCancelacion = (trabajo: any) => {
-  trabajoParaCancelar.value = trabajo
-  mostrarModalCancelacion.value = true
-}
+// ✅ Funciones para modal de cancelación (función movida más abajo)
 
 const cerrarModalCancelacion = () => {
   mostrarModalCancelacion.value = false
@@ -843,6 +919,8 @@ const getEstadoPagoClass = (estado: string): string => {
 // ✅ ARQUITECTURA MVC - Función para cambiar estado del trabajo
 const cambiarEstadoTrabajo = async (trabajo: any, nuevoEstadoId?: number) => {
   try {
+    console.log('🚀 INICIO cambiarEstadoTrabajo - FUNCIÓN EJECUTÁNDOSE');
+    console.log('🎯 PARÁMETROS RECIBIDOS:', { trabajoId: trabajo.id, nuevoEstadoId, tipoNuevoEstadoId: typeof nuevoEstadoId });
     const estadoId = nuevoEstadoId || trabajo.idEstado;
     
     console.log('🔍 cambiarEstadoTrabajo llamado:', {
@@ -856,30 +934,35 @@ const cambiarEstadoTrabajo = async (trabajo: any, nuevoEstadoId?: number) => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     console.log('🔍 Token CSRF:', csrfToken);
     
-    // Si el estado es "Cancelado" (id: 5), abrir modal de cancelación
-    if (estadoId === 5) {
-      console.log('🚨 Abriendo modal de cancelación para trabajo:', trabajo.id);
-      console.log('🚨 Estado actual de mostrarModalCancelacion:', mostrarModalCancelacion.value);
+    // Verificar si se está intentando cambiar a estado "Cancelado" (ID 4)
+    console.log('🔍 Estado ID seleccionado:', estadoId, 'Tipo:', typeof estadoId);
+    console.log('🔍 Estado actual del trabajo:', trabajo.idEstado);
+    console.log('🔍 Comparación estadoId === 4:', estadoId === 4);
+    console.log('🔍 Comparación estadoId == 4:', estadoId == 4);
+    console.log('🔍 Comparación estadoId === "4":', estadoId === "4");
+    console.log('🔍 Comparación estadoId == "4":', estadoId == "4");
+    
+    // Verificar si es "Cancelado" (ID: 3)
+    const esCancelado = estadoId === 3;
+    
+    console.log('🔍 Estado ID seleccionado:', estadoId);
+    console.log('🔍 Es Cancelado?', esCancelado);
+    
+    // Abrir modal para TODOS los trabajos cuando se selecciona "Cancelado"
+    if (esCancelado) {
+      console.log('🚨🚨🚨 DETECTADO CANCELADO - ABRIENDO MODAL 🚨🚨🚨');
+      console.log('🚨 Trabajo para cancelar:', trabajo);
       
+      // Asignar valores
       trabajoParaCancelar.value = trabajo;
       mostrarModalCancelacion.value = true;
       
-      console.log('🚨 Después de asignar - mostrarModalCancelacion:', mostrarModalCancelacion.value);
-      console.log('🚨 trabajoParaCancelar:', trabajoParaCancelar.value);
+      // Cerrar dropdown
+      estadoDropdownAbierto.value = null;
       
-      cerrarEstadoDropdown();
-      return;
-    }
-    
-    // Debug: Verificar si el estado es "Cancelado" por nombre
-    const estadoNombre = props.estadosTrabajo.find(e => e.id === estadoId)?.nombre?.toLowerCase();
-    console.log('🔍 Estado nombre:', estadoNombre);
-    
-    if (estadoNombre && estadoNombre.includes('cancelado')) {
-      console.log('🚨 Detectado estado "Cancelado" por nombre, abriendo modal');
-      trabajoParaCancelar.value = trabajo;
-      mostrarModalCancelacion.value = true;
-      cerrarEstadoDropdown();
+      console.log('🚨 MODAL ASIGNADO - mostrarModalCancelacion:', mostrarModalCancelacion.value);
+      console.log('🚨 MODAL ASIGNADO - trabajoParaCancelar:', trabajoParaCancelar.value);
+      
       return;
     }
     
@@ -913,6 +996,11 @@ const cambiarEstadoTrabajo = async (trabajo: any, nuevoEstadoId?: number) => {
     // Mostrar mensaje de éxito
     console.log('✅ Estado actualizado:', response.data);
     
+    // Mostrar mensaje flash si está disponible
+    if (response.data.flash_message) {
+      showSuccess(response.data.flash_message);
+    }
+    
   } catch (error) {
     console.error('❌ Error al cambiar estado:', error);
   }
@@ -920,20 +1008,42 @@ const cambiarEstadoTrabajo = async (trabajo: any, nuevoEstadoId?: number) => {
 
 // ✅ Funciones para el diseño mejorado del selector de estado
 const toggleEstadoDropdown = (trabajoId: number) => {
+  console.log('🔄 toggleEstadoDropdown llamado para trabajo:', trabajoId);
   // Cerrar otros dropdowns abiertos
   if (estadoDropdownAbierto.value !== trabajoId) {
     estadoDropdownAbierto.value = trabajoId;
+    console.log('✅ Dropdown abierto para trabajo:', trabajoId);
   } else {
     estadoDropdownAbierto.value = null;
+    console.log('❌ Dropdown cerrado para trabajo:', trabajoId);
   }
 };
 
 const cerrarEstadoDropdown = () => {
+  console.log('🔄 cerrarEstadoDropdown llamado');
   // Pequeño delay para permitir clicks en las opciones
   setTimeout(() => {
+    console.log('⏰ Cerrando dropdown después del delay');
     estadoDropdownAbierto.value = null;
   }, 150);
 };
+
+// ✅ FUNCIÓN DIRECTA PARA ABRIR MODAL DE CANCELACIÓN
+const abrirModalCancelacion = (trabajo: any) => {
+  console.log('🚨🚨🚨 ABRIR MODAL CANCELACIÓN - FUNCIÓN DIRECTA 🚨🚨🚨');
+  console.log('🚨 Trabajo:', trabajo);
+  
+  // Asignar trabajo y abrir modal
+  trabajoParaCancelar.value = trabajo;
+  mostrarModalCancelacion.value = true;
+  
+  // Cerrar dropdown
+  estadoDropdownAbierto.value = null;
+  
+  console.log('🚨 MODAL ABIERTO - mostrarModalCancelacion:', mostrarModalCancelacion.value);
+  console.log('🚨 MODAL ABIERTO - trabajoParaCancelar:', trabajoParaCancelar.value);
+};
+
 
 const getEstadoTrabajoNombre = (estadoId: number): string => {
   const estado = props.estadosTrabajo.find(e => e.id === estadoId);

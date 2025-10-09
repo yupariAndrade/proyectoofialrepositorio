@@ -48,14 +48,14 @@
              </div>
 
              <!-- Mensaje de éxito -->
-            <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl backdrop-blur-sm">
-               <div class="flex items-center">
-                 <svg class="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                 </svg>
-                 <span class="text-green-400 font-medium">{{ $page.props.flash.success }}</span>
-               </div>
-             </div>
+            <div v-if="$page.props.flash?.success" class="mb-4 flex items-center justify-center">
+              <div class="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-pulse">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="font-semibold text-sm">{{ $page.props.flash.success }}</span>
+              </div>
+            </div>
 
              <form @submit.prevent="submit" class="space-y-8">
               <!-- Información Personal -->
@@ -358,7 +358,7 @@
 </template>
 
 <script setup>
-import { useForm } from '@inertiajs/vue3'
+import { useForm, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppContent from '@/components/AppContent.vue'
@@ -367,6 +367,8 @@ import { Link } from '@inertiajs/vue3'
 const props = defineProps({
   roles: { type: Array, required: true }
 })
+
+const page = usePage()
 
 // Formulario usando Inertia
 const form = useForm({
@@ -391,6 +393,7 @@ const submit = () => {
     onSuccess: () => {
       // El mensaje de éxito se maneja desde el controlador
       console.log('Usuario registrado exitosamente')
+      console.log('Flash messages:', page.props.flash)
     },
     onError: (errors) => {
       console.log('Errores de validación:', errors)

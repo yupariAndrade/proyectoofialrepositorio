@@ -59,7 +59,7 @@
                   <div class="w-8 h-8 mr-3 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                   </div>
-                  Fotógrafo Responsable
+                 Registrado por el Usuario que inicio Sesion
                 </h3>
                 <div class="bg-gradient-to-r from-slate-700/50 to-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-600/50">
                   <div class="flex items-center">

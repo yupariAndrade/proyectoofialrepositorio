@@ -26,21 +26,26 @@ class RegistrarTrabajoController extends Controller
      */
     private function determinarEstadoPago($saldo, $montoPagado, $total = null)
     {
+        Log::info('🔍 Calculando estado de pago:', [
+            'saldo' => $saldo,
+            'montoPagado' => $montoPagado,
+            'total' => $total
+        ]);
+        
         // Si no se ha pagado nada (A Cuenta = 0)
         if ($montoPagado == 0) {
-            // Si el saldo es igual al total, significa que no hay deuda pendiente = Pago completado
-            if ($total !== null && $saldo == $total) {
-                return 1; // Pago completado
-            }
-            // Si no, es Pendiente
+            // Si no se ha pagado nada, es Pendiente
+            Log::info('✅ Estado calculado: Pendiente (ID 2)');
             return 2; // Pendiente
         }
         // Si el saldo es 0, está completamente pagado
         elseif ($saldo == 0) {
+            Log::info('✅ Estado calculado: Pago Completado (ID 1)');
             return 1; // Pago completado
         }
         // Si se ha pagado algo pero aún queda saldo, es Parcial
         else {
+            Log::info('✅ Estado calculado: Parcial (ID 3)');
             return 3; // Parcial
         }
     }
@@ -349,7 +354,7 @@ class RegistrarTrabajoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTrabajoRequest $request)
+    public function store(Request $request)
     {
         // Log para debugging
         Log::info('Datos recibidos en store:', $request->all());
@@ -366,6 +371,7 @@ class RegistrarTrabajoController extends Controller
             'idResponsable' => 'nullable|exists:usuarios,id',
             'fechaEntrega' => 'required|date',
             'aCuenta' => 'required|numeric|min:0',
+            'idEstadoPago' => 'nullable|exists:estados_pago,id',
         ]);
 
         if ($validator->fails()) {
@@ -376,6 +382,11 @@ class RegistrarTrabajoController extends Controller
         try {
             Log::info('Iniciando transacción de base de datos...');
             Log::info('Datos del request:', $request->all());
+            Log::info('🔍 Datos específicos de fechas:', [
+                'fechaEntrega' => $request->fechaEntrega,
+                'fechaEntrega_type' => gettype($request->fechaEntrega),
+                'fechaEntrega_raw' => $request->input('fechaEntrega')
+            ]);
             
             DB::transaction(function () use ($request) {
                 // 1. Crear el trabajo
@@ -403,9 +414,10 @@ class RegistrarTrabajoController extends Controller
                 $trabajo = Trabajos::create([
                     'idCliente' => $request->cliente,
                     'idResponsable' => $idResponsable, // Usuario responsable del trabajo
-                    'fechaRegistro' => now(),
+                    'fechaRegistro' => now()->toDateString(), // Convertir a formato date
                     'fechaEntrega' => $request->fechaEntrega,
                     'idEstado' => 1, // ✅ ARQUITECTURA MVC - Siempre empieza en "Pendiente"
+                    'idEstadoPago' => $request->idEstadoPago ?? 2, // ✅ ARQUITECTURA MVC - Usar estado seleccionado o "Pendiente" por defecto
                 ]);
                 Log::info('Trabajo creado con ID: ' . $trabajo->getKey());
                 Log::info('🔍 Trabajo creado con responsable:', [
@@ -488,8 +500,22 @@ class RegistrarTrabajoController extends Controller
                     Log::info('Detalle del trabajo creado con ID: ' . $detalle->getKey());
                 }
                 
-                // 6. Actualizar el trabajo con el estado del pago
-                $trabajo->update(['idEstadoPago' => $request->input('idEstadoPago') ?: $estadoPago]);
+                // 6. Actualizar el trabajo con el estado del pago (solo si es diferente)
+                $estadoPagoFinal = $request->input('idEstadoPago') ?: $estadoPago;
+                Log::info('🔍 Estado de pago final:', [
+                    'idEstadoPago_request' => $request->input('idEstadoPago'),
+                    'estadoPago_calculado' => $estadoPago,
+                    'estadoPago_final' => $estadoPagoFinal,
+                    'estadoPago_actual' => $trabajo->idEstadoPago
+                ]);
+                
+                // Solo actualizar si es diferente al valor actual
+                if ($trabajo->idEstadoPago != $estadoPagoFinal) {
+                    $trabajo->update(['idEstadoPago' => $estadoPagoFinal]);
+                    Log::info('✅ Estado de pago actualizado de ' . $trabajo->idEstadoPago . ' a ' . $estadoPagoFinal);
+                } else {
+                    Log::info('✅ Estado de pago ya es correcto: ' . $estadoPagoFinal);
+                }
                 
                 Log::info('✅ Transacción completada exitosamente');
             });
@@ -619,6 +645,21 @@ class RegistrarTrabajoController extends Controller
 
         // Obtener estados de pago para el modal
         $estadosPago = EstadoPago::all();
+
+        // Agregar historial de pagos al trabajo
+        $trabajoData['pagos'] = $historialPagos->map(function ($pago) {
+            return [
+                'id' => $pago->id,
+                'idPago' => $pago->idPago,
+                'idTrabajo' => $pago->idTrabajo,
+                'total' => $pago->total,
+                'aCuenta' => $pago->aCuenta,
+                'saldo' => $pago->saldo,
+                'devoluciones' => $pago->devoluciones ?? 0,
+                'created_at' => $pago->created_at,
+                'updated_at' => $pago->updated_at,
+            ];
+        })->toArray();
 
         return Inertia::render('RegistrarTrabajos/Show', [
             'trabajo' => $trabajoData,
@@ -763,7 +804,7 @@ class RegistrarTrabajoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTrabajoRequest $request, $slug)
+    public function update(Request $request, $slug)
     {
         Log::info('🚨🚨🚨 MÉTODO UPDATE INICIADO 🚨🚨🚨');
         Log::info('🔄 MÉTODO UPDATE LLAMADO - Slug:', ['slug' => $slug]);
@@ -922,7 +963,7 @@ class RegistrarTrabajoController extends Controller
     public function cambiarEstado(Request $request, $id)
     {
         // Verificar autenticación
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return response()->json(['error' => 'No autenticado'], 401);
         }
 
@@ -945,8 +986,8 @@ class RegistrarTrabajoController extends Controller
             ]);
 
             // ✅ LÓGICA DE NEGOCIO: Sincronización de estados de pago
-            if ($request->idEstado == 5) {
-                // Si el estado es "Cancelado" (ID: 5), sincronizar estado de pago
+            if ($request->idEstado == 3) {
+                // Si el estado es "Cancelado" (ID: 3), sincronizar estado de pago
                 $estadoPagoCancelado = \App\Models\EstadoPago::where('nombre', 'Cancelado')->first();
                 
                 if ($estadoPagoCancelado) {
@@ -963,20 +1004,36 @@ class RegistrarTrabajoController extends Controller
                         'trabajo_id' => $trabajo->id,
                         'estado_pago_anterior' => $estadoPagoAnterior,
                         'estado_pago_actualizado' => $estadoPagoCancelado->id,
-                        'usuario' => auth()->user()->nombre ?? 'Usuario',
+                        'usuario' => Auth::user()->nombre ?? 'Usuario',
                         'fecha' => now()
                     ]);
                 }
-            } elseif ($estadoAnterior == 5 && $request->idEstado != 5) {
+            } elseif ($estadoAnterior == 3 && $request->idEstado != 3) {
                 // ✅ PROCESO INVERSO: Calcular estado de pago basado en total, aCuenta y saldo
+                Log::info('🔄 RESTAURACIÓN DETECTADA: Cambiando de Cancelado a otro estado', [
+                    'trabajo_id' => $trabajo->id,
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_nuevo' => $request->idEstado
+                ]);
+                
                 $pago = $trabajo->pagos()->latest('idPago')->first();
                 if ($pago) {
                     $total = $pago->total ?? 0;
                     $aCuenta = $pago->aCuenta ?? 0;
                     $saldo = $pago->saldo ?? 0;
                     
+                    Log::info('💰 Datos de pago para cálculo de estado:', [
+                        'total' => $total,
+                        'aCuenta' => $aCuenta,
+                        'saldo' => $saldo
+                    ]);
+                    
                     // ✅ ARQUITECTURA MVC - Usar función centralizada para determinar estado de pago
                     $nuevoEstadoPago = $this->determinarEstadoPago($saldo, $aCuenta, $total);
+                    
+                    Log::info('🎯 Nuevo estado de pago calculado:', [
+                        'nuevo_estado_pago' => $nuevoEstadoPago
+                    ]);
                     
                     // Actualizar estado de pago del trabajo
                     $trabajo->update([
@@ -993,7 +1050,7 @@ class RegistrarTrabajoController extends Controller
                         'aCuenta' => $aCuenta,
                         'saldo' => $saldo,
                         'estado_pago_calculado' => $nuevoEstadoPago,
-                        'usuario' => auth()->user()->nombre ?? 'Usuario',
+                        'usuario' => Auth::user()->nombre ?? 'Usuario',
                         'fecha' => now()
                     ]);
                 }
@@ -1005,7 +1062,7 @@ class RegistrarTrabajoController extends Controller
             'trabajo_id' => $trabajo->id,
             'estado_anterior' => $estadoAnterior,
             'estado_nuevo' => $request->idEstado,
-            'usuario' => auth()->user()->nombre ?? 'Usuario',
+            'usuario' => Auth::user()->nombre ?? 'Usuario',
             'fecha' => now()
         ]);
 
@@ -1120,10 +1177,19 @@ class RegistrarTrabajoController extends Controller
             'trabajo_data_completo' => $trabajoData
         ]);
 
+        // Determinar mensaje flash basado en el cambio de estado
+        $mensajeFlash = 'Estado actualizado exitosamente';
+        if ($estadoAnterior == 4 && $request->idEstado != 4) {
+            $mensajeFlash = 'Trabajo restaurado exitosamente';
+        } elseif ($request->idEstado == 4) {
+            $mensajeFlash = 'Trabajo cancelado exitosamente';
+        }
+
         return response()->json([
             'success' => 'Estado actualizado exitosamente',
             'nuevoEstado' => $trabajoActualizado->estado->nombre ?? 'Sin estado',
-            'trabajo' => $trabajoData // Retornar el trabajo transformado para el frontend
+            'trabajo' => $trabajoData, // Retornar el trabajo transformado para el frontend
+            'flash_message' => $mensajeFlash
         ]);
     }
 
@@ -1198,6 +1264,10 @@ class RegistrarTrabajoController extends Controller
      */
     public function cancelarTrabajo(Request $request, $id)
     {
+        Log::info('🚨🚨🚨 MÉTODO CANCELAR TRABAJO INICIADO 🚨🚨🚨');
+        Log::info('🔄 ID del trabajo a cancelar:', ['id' => $id]);
+        Log::info('🔄 Datos recibidos:', $request->all());
+        
         try {
             // Validación de datos (campos opcionales)
             $request->validate([
@@ -1206,9 +1276,14 @@ class RegistrarTrabajoController extends Controller
             ]);
 
             $trabajo = Trabajos::findOrFail($id);
+            Log::info('✅ Trabajo encontrado:', [
+                'id' => $trabajo->id,
+                'estado_actual' => $trabajo->idEstado,
+                'cliente' => $trabajo->cliente ? $trabajo->cliente->nombre : 'Sin cliente'
+            ]);
             
             // Verificar que el trabajo no esté ya cancelado
-            if ($trabajo->idEstado == 5) { // 5 = Cancelado
+            if ($trabajo->idEstado == 3) { // 3 = Cancelado
                 return response()->json([
                     'success' => false,
                     'message' => 'El trabajo ya está cancelado'
@@ -1216,11 +1291,15 @@ class RegistrarTrabajoController extends Controller
             }
 
             DB::transaction(function () use ($trabajo, $request) {
+                Log::info('🔄 Iniciando transacción de cancelación para trabajo ID:', ['id' => $trabajo->id]);
+                
                 // 1. Actualizar trabajo
+                Log::info('🔄 Actualizando trabajo con idEstado = 3 (Cancelado)');
                 $trabajo->update([
-                    'idEstado' => 5, // Cancelado
+                    'idEstado' => 3, // Cancelado
                     'observaciones' => $request->observaciones
                 ]);
+                Log::info('✅ Trabajo actualizado exitosamente');
 
                 // 2. Actualizar pago con devoluciones (solo si se proporciona monto)
                 $pago = $trabajo->pagos()->latest('idPago')->first();
@@ -1248,12 +1327,13 @@ class RegistrarTrabajoController extends Controller
                     'cliente' => $trabajo->cliente->nombre ?? 'Sin cliente',
                     'observaciones' => $request->observaciones,
                     'monto_devuelto' => $request->montoDevuelto,
-                    'usuario' => auth()->user()->nombre ?? 'Usuario',
+                    'usuario' => Auth::user()->nombre ?? 'Usuario',
                     'fecha' => now()
                 ]);
             });
 
             // Recargar el trabajo con todas sus relaciones para retornar datos completos
+            Log::info('🔄 Recargando trabajo actualizado para respuesta');
             $trabajoActualizado = Trabajos::with([
                 'cliente',
                 'responsable.rol', 
@@ -1262,6 +1342,12 @@ class RegistrarTrabajoController extends Controller
                 'detallesTrabajo.servicio',
                 'pagos'
             ])->find($trabajo->id);
+            
+            Log::info('✅ Trabajo recargado:', [
+                'id' => $trabajoActualizado->id,
+                'estado' => $trabajoActualizado->estado ? $trabajoActualizado->estado->nombre : 'Sin estado',
+                'estado_pago' => $trabajoActualizado->estadoPago ? $trabajoActualizado->estadoPago->nombre : 'Sin estado pago'
+            ]);
 
             // ✅ USAR EXACTAMENTE LA MISMA LÓGICA QUE EL MÉTODO INDEX
             // Calcular total CON descuentos aplicados correctamente (igual que en index)
@@ -1352,10 +1438,19 @@ class RegistrarTrabajoController extends Controller
                 'servicios_count' => $trabajoActualizado->detallesTrabajo->count()
             ]);
 
+            Log::info('✅ Enviando respuesta exitosa de cancelación:', [
+                'success' => true,
+                'trabajo_id' => $trabajoData['id'],
+                'id_estado' => $trabajoData['idEstado'],
+                'id_estado_pago' => $trabajoData['idEstadoPago']
+            ]);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Trabajo cancelado exitosamente',
-                'trabajo' => $trabajoData // Retornar el trabajo transformado para el frontend
+                'trabajo' => $trabajoData, // Retornar el trabajo transformado para el frontend
+                'redirect' => route('registrar-trabajos'),
+                'flash_message' => 'Trabajo cancelado exitosamente'
             ]);
 
         } catch (\Exception $e) {

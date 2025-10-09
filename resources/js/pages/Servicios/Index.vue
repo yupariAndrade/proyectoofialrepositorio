@@ -2,9 +2,14 @@
   <AppShell>
     <AppSidebar>
       <!-- Contenido principal -->
-      <div class="min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-black flex-1">
+      <div class="min-h-screen overflow-hidden flex-1 relative">
+        <!-- Fondo animado de partículas -->
+        <ParticleBackground />
+        
+        <!-- Contenido principal -->
+        <div class="relative z-10">
         <!-- Header -->
-        <header class="bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-lg border-b border-white/10 px-8 py-6">
+        <header class="bg-gradient-to-r from-slate-800/30 to-slate-900/30 backdrop-blur-lg border-b border-white/10 px-8 py-6">
           <div class="flex items-center justify-between">
             <div>
               <h1 class="text-3xl font-bold bg-gradient-to-r from-red-500 via-white to-gray-300 bg-clip-text text-transparent mb-2">📸 Servicios</h1>
@@ -44,7 +49,7 @@
           </div>
           
           <!-- Filtros y búsqueda -->
-          <div class="bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 p-6 mb-8">
+          <div class="bg-gradient-to-r from-slate-800/30 to-slate-900/30 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 p-6 mb-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div class="flex-1">
                 <label for="search" class="block text-sm font-medium text-slate-300 mb-2">Buscar servicios</label>
@@ -86,7 +91,7 @@
             <div 
               v-for="servicio in filteredServicios" 
               :key="servicio.id"
-              class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden hover:shadow-amber-500/20 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102"
+              class="bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden hover:shadow-amber-500/20 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102"
             >
               <!-- Imagen del servicio -->
               <div class="relative">
@@ -107,8 +112,8 @@
                   </div>
                 </div>
                 <!-- Badge de estado -->
-                <div class="absolute top-80 right-2">
-                  <span :class="servicio.estado == 1 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'" class="px-2 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm">
+                <div class="absolute top-2 right-2">
+                  <span :class="servicio.estado == 1 ? 'bg-green-600 text-white border-green-500 shadow-lg shadow-green-500/30' : 'bg-red-600 text-white border-red-500 shadow-lg shadow-red-500/30'" class="px-3 py-1.5 rounded-full text-xs font-bold border backdrop-blur-sm">
                     {{ servicio.estado == 1 ? 'Disponible' : 'No disponible' }}
                   </span>
                 </div>
@@ -158,7 +163,7 @@
 
           <!-- Estado vacío -->
           <div v-else class="text-center py-16">
-            <div class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 p-12">
+            <div class="bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 p-12">
               <div class="w-24 h-24 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
@@ -175,6 +180,7 @@
             </div>
           </div>
         </main>
+        </div>
       </div>
     </AppSidebar>
   </AppShell>
@@ -185,6 +191,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
+import ParticleBackground from '@/components/ParticleBackground.vue'
 
 // Interfaces para tipado
 interface FlashMessages {

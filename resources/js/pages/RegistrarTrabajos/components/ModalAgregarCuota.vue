@@ -35,11 +35,11 @@
             </div>
             <div>
               <span class="text-gray-400">Ya pagado:</span>
-              <span class="text-white ml-2">{{ Number(trabajo?.aCuenta || 0) }} Bs</span>
+              <span class="text-white ml-2">{{ formatPrecio(trabajo?.aCuenta || 0) }} Bs</span>
             </div>
             <div>
               <span class="text-gray-400">Saldo pendiente:</span>
-              <span class="text-white ml-2">{{ Number(trabajo?.saldo || 0) }} Bs</span>
+              <span class="text-white ml-2">{{ formatPrecio(trabajo?.saldo || 0) }} Bs</span>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@
               </button>
             </div>
           </div>
-          <p class="text-xs text-gray-400 mt-1">Máximo: {{ Number(trabajo?.saldo || 0) }} Bs</p>
+          <p class="text-xs text-gray-400 mt-1">Máximo: {{ formatPrecio(trabajo?.saldo || 0) }} Bs</p>
         </div>
 
         <!-- Estado de Pago (Opcional) -->
@@ -168,8 +168,8 @@ const estadosPagoDisponibles = computed(() => {
   
   // Filtrar para mostrar solo "Pago completado" cuando se puede cambiar el estado
   return props.estadosPago.filter(estado => 
-    estado.nombreEstado.toLowerCase().includes('completado') || 
-    estado.nombreEstado.toLowerCase().includes('pagado')
+    estado.nombreEstado?.toLowerCase().includes('completado') || 
+    estado.nombreEstado?.toLowerCase().includes('pagado')
   )
 })
 
@@ -185,6 +185,18 @@ const getTotalTrabajo = (trabajo: any): number => {
     const subtotalFinal = Math.max(0, subtotalBruto - descuento)
     return total + subtotalFinal
   }, 0)
+}
+
+// ✅ ARQUITECTURA MVC - Función helper para formatear precios (consistente con Index.vue)
+const formatPrecio = (precio: any): string => {
+  const numPrecio = Number(precio) || 0
+  
+  // Solo mostrar decimales si hay centavos
+  if (numPrecio % 1 === 0) {
+    return numPrecio.toString() // Sin decimales para números enteros
+  } else {
+    return numPrecio.toFixed(2) // Con decimales para números con centavos
+  }
 }
 
 // Funciones para incrementar/decrementar monto
@@ -208,70 +220,65 @@ const cerrarModal = () => {
   procesando.value = false
 }
 
-// Función para procesar la cuota
+// ✅ ARQUITECTURA MVC - Función para procesar la cuota
 const procesarCuota = async () => {
+  // Validaciones básicas
   if (!props.trabajo || !montoCuota.value) {
     alert('Por favor ingrese un monto válido')
     return
   }
   
-  const montoNumero = Number(montoCuota.value)
+  const montoNumero = parseFloat(montoCuota.value)
+  const saldoPendiente = parseFloat(props.trabajo.saldo || 0)
   
+  // Validaciones de negocio
   if (isNaN(montoNumero) || montoNumero <= 0) {
-    alert('Por favor ingrese un monto válido')
+    alert('El monto de la cuota debe ser mayor a 0')
     return
   }
   
-  if (montoNumero > props.trabajo.saldo) {
-    alert(`El monto no puede ser mayor al saldo pendiente (${props.trabajo.saldo} Bs)`)
+  if (montoNumero > saldoPendiente) {
+    alert(`Error: El monto de la cuota (${montoNumero} Bs) no puede ser mayor al saldo pendiente (${saldoPendiente} Bs)`)
     return
   }
   
   procesando.value = true
   
   try {
-    // Determinar el nuevo estado de pago
-    const saldoActual = Number(props.trabajo.saldo || 0)
-    const nuevoSaldo = saldoActual - montoNumero
-    let nuevoEstado = null
-    
-    // Si el saldo se completa (0 o menos), automáticamente cambiar a "Pago completado"
-    if (nuevoSaldo <= 0 && estadoPagoSeleccionado.value === 'mantener') {
-      // Buscar el estado "Pago completado" en la lista
-      const estadoCompletado = props.estadosPago.find(estado => 
-        estado.nombreEstado.toLowerCase().includes('completado') || 
-        estado.nombreEstado.toLowerCase().includes('pagado')
-      )
-      if (estadoCompletado) {
-        nuevoEstado = estadoCompletado.id
-      }
-    } else if (estadoPagoSeleccionado.value !== 'mantener') {
-      nuevoEstado = estadoPagoSeleccionado.value
-    }
-    
-    // Enviar pago al servidor
-    const response = await fetch(`/trabajos/${props.trabajo.id}/cuota`, {
+    // ✅ ARQUITECTURA MVC - Enviar pago al servidor usando la nueva ruta API
+    const response = await fetch('/api/cuotas', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        'X-Requested-With': 'XMLHttpRequest'
       },
       body: JSON.stringify({
-        monto: montoNumero,
-        estado: nuevoEstado
+        idTrabajo: props.trabajo.id,
+        monto: montoNumero
       })
     })
     
     if (response.ok) {
-      // Emitir evento de éxito
-      emit('cuotaProcesada', props.trabajo)
-      cerrarModal()
+      const data = await response.json()
+      if (data.success) {
+        // ✅ ARQUITECTURA MVC - Mostrar mensaje de éxito
+        const mensajeExito = data.flash?.success || data.message || 'Cuota registrada exitosamente'
+        alert('✅ ' + mensajeExito)
+        
+        // ✅ ARQUITECTURA MVC - Emitir evento con datos actualizados del backend
+        emit('cuotaProcesada', data.trabajo)
+        cerrarModal()
+      } else {
+        alert('❌ Error: ' + data.message)
+      }
     } else {
-      alert('Error al procesar el pago')
+      const errorData = await response.json()
+      alert('❌ Error al procesar el pago: ' + (errorData.message || 'Error desconocido'))
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error)
-    alert('Error al procesar el pago')
+    alert('Error al procesar el pago: ' + (error?.message || 'Error desconocido'))
   } finally {
     procesando.value = false
   }

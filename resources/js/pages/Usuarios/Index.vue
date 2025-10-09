@@ -1,9 +1,14 @@
 <template>
   <AppShell>
     <AppSidebar />
-    <div class="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 flex-1">
+    <div class="min-h-screen flex-1 relative">
+      <!-- Fondo animado de partículas -->
+      <ParticleBackground />
+      
+      <!-- Contenido principal -->
+      <div class="relative z-10">
       <!-- Header -->
-      <header class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-lg border-b border-red-500/20 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <header class="bg-gradient-to-r from-gray-800/30 to-gray-900/30 backdrop-blur-lg border-b border-red-500/20 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-400 via-red-500 to-red-600 bg-clip-text text-transparent mb-2 flex items-center">
@@ -50,7 +55,7 @@
         </div>
 
         <!-- Filtros y búsqueda -->
-        <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-red-500/20 p-4 sm:p-6 mb-6 sm:mb-8">
+        <div class="bg-gradient-to-r from-gray-800/30 to-gray-900/30 backdrop-blur-lg rounded-xl shadow-2xl border border-red-500/20 p-4 sm:p-6 mb-6 sm:mb-8">
           <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="flex-1">
               <label for="search" class="block text-sm font-medium text-gray-300 mb-2">Buscar usuarios</label>
@@ -78,7 +83,7 @@
   <div
     v-for="usuario in filteredUsuarios"
     :key="usuario.id"
-            class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-red-500/20 p-3 sm:p-4 hover:shadow-red-500/20 transition-all duration-300"
+            class="bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-lg rounded-xl shadow-2xl border border-red-500/20 p-3 sm:p-4 hover:shadow-red-500/20 transition-all duration-300"
           >
             <!-- Mobile Layout -->
             <div class="block sm:hidden">
@@ -233,7 +238,7 @@
 
         <!-- Estado vacío -->
         <div v-else class="text-center py-12 sm:py-16">
-          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-xl shadow-2xl border border-red-500/20 p-8 sm:p-12">
+          <div class="bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-lg rounded-xl shadow-2xl border border-red-500/20 p-8 sm:p-12">
             <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
               <svg class="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
             </div>
@@ -247,15 +252,17 @@
           </div>
         </div>
       </main>
+      </div>
     </div>
   </AppShell>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
+import ParticleBackground from '@/components/ParticleBackground.vue'
 
 const props = defineProps({
   usuarios: { type: Array, required: true },

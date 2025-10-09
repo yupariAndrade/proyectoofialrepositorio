@@ -14,17 +14,35 @@
         </div>
       </header>
 
-      <!-- Success Message -->
-      <div v-if="successMessage" class="px-8 py-4">
-        <div class="max-w-7xl mx-auto">
-          <div class="bg-green-500/20 border border-green-500/30 rounded-lg p-4 flex items-center">
-            <svg class="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="text-green-400 font-medium">{{ successMessage }}</span>
+      <!-- ✅ ARQUITECTURA MVC - Success Message with Auto-Hide -->
+      <Transition
+        enter-active-class="transition-all duration-500 ease-out"
+        enter-from-class="opacity-0 transform -translate-y-4 scale-95"
+        enter-to-class="opacity-100 transform translate-y-0 scale-100"
+        leave-active-class="transition-all duration-300 ease-in"
+        leave-from-class="opacity-100 transform translate-y-0 scale-100"
+        leave-to-class="opacity-0 transform -translate-y-4 scale-95"
+      >
+        <div v-if="showSuccessMessage && successMessage" class="px-8 py-4">
+          <div class="max-w-7xl mx-auto">
+            <div class="bg-green-500/20 border border-green-500/30 rounded-lg p-4 flex items-center animate-pulse">
+              <svg class="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span class="text-green-400 font-medium">{{ successMessage }}</span>
+              <!-- Botón para cerrar manualmente -->
+              <button 
+                @click="showSuccessMessage = false" 
+                class="ml-auto text-green-400/80 hover:text-green-400 transition-colors duration-200"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </Transition>
 
       <!-- Main Content Area -->
       <main class="flex-1 overflow-y-auto p-8">
@@ -125,9 +143,25 @@ const props = defineProps({
   clientePreSeleccionado: Object,
 })
 
-// Estado local
+// ✅ ARQUITECTURA MVC - Estado local con auto-ocultación
 const successMessage = ref('')
 const isSubmitting = ref(false)
+const showSuccessMessage = ref(false)
+
+// Función para mostrar mensaje de éxito con auto-ocultación
+const showSuccess = (message) => {
+  successMessage.value = message
+  showSuccessMessage.value = true
+  
+  // Auto-ocultar después de 4 segundos
+  setTimeout(() => {
+    showSuccessMessage.value = false
+    // Limpiar el mensaje después de la animación
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 300)
+  }, 4000)
+}
 
 // ✅ Usar el composable con cálculos para UX (validaciones en backend)
 const {
@@ -169,9 +203,18 @@ watch(() => originalForm.idResponsable, (newIdResponsable) => {
 const submitForm = () => {
   console.log('submitForm ejecutándose...', originalForm)
   isSubmitting.value = true
-  // Usar directamente el form de Inertia
-  originalSubmitForm()
-  isSubmitting.value = false
+  
+  // Usar directamente el form de Inertia con manejo de éxito
+  originalForm.post(route('registrar-trabajos.store'), {
+    onSuccess: () => {
+      showSuccess('Trabajo registrado correctamente')
+      isSubmitting.value = false
+    },
+    onError: (errors) => {
+      console.error('Errores del servidor:', errors)
+      isSubmitting.value = false
+    }
+  })
 }
 
 // ✅ Funciones faltantes que el template necesita

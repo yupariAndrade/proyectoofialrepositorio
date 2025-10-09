@@ -17,17 +17,17 @@
         <!-- Formulario principal -->
         <div class="max-w-4xl mx-auto px-8 py-8">
           <!-- Mensaje de Éxito -->
-          <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-900/80 border border-green-400/50 text-green-200 rounded-xl backdrop-blur-sm">
-            <div class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+          <div v-if="page.props.flash?.success" class="mb-4 flex items-center justify-center">
+            <div class="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-pulse">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              <span class="font-medium">{{ $page.props.flash.success }}</span>
+              <span class="font-semibold text-sm">{{ page.props.flash.success }}</span>
             </div>
           </div>
 
           <!-- Mensaje de Error -->
-          <div v-if="$page.props.errors && Object.keys($page.props.errors).length > 0" class="mb-6 p-4 bg-red-900/80 border border-red-400/50 text-red-200 rounded-xl backdrop-blur-sm">
+          <div v-if="page.props.errors && Object.keys(page.props.errors).length > 0" class="mb-6 p-4 bg-red-900/80 border border-red-400/50 text-red-200 rounded-xl backdrop-blur-sm">
             <div class="flex items-center gap-3">
               <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
@@ -35,7 +35,7 @@
               <div>
                 <p class="font-medium">⚠️ Errores en el formulario:</p>
                 <ul class="text-sm mt-1 space-y-1">
-                  <li v-for="(error, field) in $page.props.errors" :key="field" class="flex items-center gap-2">
+                  <li v-for="(error, field) in page.props.errors" :key="field" class="flex items-center gap-2">
                     <span class="w-2 h-2 bg-red-400 rounded-full"></span>
                     <span class="text-red-300">{{ error }}</span>
                   </li>
@@ -96,11 +96,11 @@
                       @input="form.ci = form.ci.replace(/[^0-9]/g, '')"
                       :class="[
                         'w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent',
-                        $page.props.errors?.ci ? 'border-red-500' : ''
+                        page.props.errors?.ci ? 'border-red-500' : ''
                       ]"
                     />
-                    <div v-if="$page.props.errors?.ci" class="text-xs text-red-400 mt-1">
-                      {{ $page.props.errors.ci }}
+                    <div v-if="page.props.errors?.ci" class="text-xs text-red-400 mt-1">
+                      {{ page.props.errors.ci }}
                     </div>
                   </div>
                 </div>
@@ -259,7 +259,7 @@
 </template>
 
 <script setup>
-import { useForm } from '@inertiajs/vue3'
+import { useForm, usePage } from '@inertiajs/vue3'
 import AppShell from '@/components/AppShell.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppContent from '@/components/AppContent.vue'
@@ -269,6 +269,8 @@ const props = defineProps({
   usuario: { type: Object, required: true }, 
   roles: { type: Array, required: true } 
 })
+
+const page = usePage()
 
 // Formulario usando Inertia
 const form = useForm({
@@ -292,6 +294,7 @@ const submit = () => {
     onSuccess: () => {
       // El mensaje de éxito se maneja desde el controlador
       console.log('Usuario actualizado exitosamente')
+      console.log('Flash messages:', page.props.flash)
     },
     onError: (errors) => {
       console.log('Errores de validación:', errors)

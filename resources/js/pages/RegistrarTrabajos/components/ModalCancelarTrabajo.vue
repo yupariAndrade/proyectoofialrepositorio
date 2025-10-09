@@ -153,6 +153,12 @@ const emit = defineEmits(['cerrar', 'cancelado'])
 // Debug: Log cuando el modal se monta
 onMounted(() => {
   console.log('🚨 ModalCancelarTrabajo montado con trabajo:', props.trabajo)
+  
+  // ✅ VALIDACIÓN ROBUSTA: Verificar si el trabajo ya está cancelado
+  if (props.trabajo?.estado?.nombre === 'Cancelado') {
+    console.warn('⚠️ El trabajo ya está cancelado, cerrando modal')
+    emit('cerrar')
+  }
 })
 
 // Estado del componente
@@ -164,13 +170,15 @@ const form = reactive({
   montoDevuelto: 0
 })
 
-// Debug: Log cuando el modal se monta
-onMounted(() => {
-  console.log('🚨 ModalCancelarTrabajo montado con trabajo:', props.trabajo);
-});
-
 // Función para cancelar trabajo
 const cancelarTrabajo = async () => {
+  // ✅ VALIDACIÓN ROBUSTA: Verificar que el trabajo no esté ya cancelado
+  if (props.trabajo?.estado?.nombre === 'Cancelado') {
+    console.warn('⚠️ No se puede cancelar un trabajo que ya está cancelado')
+    emit('cerrar')
+    return
+  }
+  
   // Validación básica (campos opcionales)
   if (form.montoDevuelto < 0) {
     return
@@ -179,19 +187,31 @@ const cancelarTrabajo = async () => {
   loading.value = true
 
   try {
+    // ✅ Obtener token CSRF de forma más robusta
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                     document.querySelector('input[name="_token"]')?.value ||
+                     window.Laravel?.csrfToken;
+    
+    console.log('🔑 Token CSRF obtenido:', csrfToken ? 'Sí' : 'No');
+    
     const response = await axios.patch(`/api/trabajos/${props.trabajo.id}/cancelar`, {
       observaciones: form.observaciones.trim(),
       montoDevuelto: form.montoDevuelto
     }, {
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        'X-CSRF-TOKEN': csrfToken,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
-      }
+      },
+      // ✅ Agregar configuración para manejar CSRF
+      withCredentials: true
     })
 
     if (response.data.success) {
+      // ✅ Mostrar mensaje de éxito como en la imagen
+      alert('Trabajo cancelado exitosamente')
+      
       // Emitir evento de cancelación exitosa
       emit('cancelado', response.data.trabajo)
       

@@ -24,7 +24,7 @@ export function useTrabajoForm(props) {
     fechaEntrega: '',
     idResponsable: null,
     aCuenta: 0,
-    idEstadoPago: 2,
+    idEstadoPago: null,
   })
 
   // ✅ Estados reactivos para totales (vienen del backend)
@@ -61,7 +61,7 @@ export function useTrabajoForm(props) {
     
     isLoading.value = true
     try {
-      const response = await axios.post('/api/trabajos/calcular-totales', {
+      const response = await axios.post('/calcular-total', {
         servicios: form.servicios,
         aCuenta: aCuentaParaEnvio
       })
@@ -196,9 +196,12 @@ export function useTrabajoForm(props) {
     // Crear una copia del form con solo los servicios válidos
     const formData = {
       ...form.data(),
-      servicios: serviciosLimpios,
+      servicios: serviciosLimpios,  // Asegurar que servicios se envíe
+      cliente: form.cliente,  // Asegurar que cliente se envíe
       aCuenta: form.aCuenta || 0,  // Asegurar que aCuenta se envíe
-      idResponsable: form.idResponsable || null  // Asegurar que idResponsable se envíe
+      idResponsable: form.idResponsable || null,  // Asegurar que idResponsable se envíe
+      idEstadoPago: form.idEstadoPago,  // Asegurar que idEstadoPago se envíe
+      fechaEntrega: form.fechaEntrega  // Asegurar que fechaEntrega se envíe
     }
     
     console.log('🔄 Datos finales a enviar:', formData)

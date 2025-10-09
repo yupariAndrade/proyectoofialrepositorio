@@ -3,6 +3,7 @@
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal.vue';
+import UniverseBackground from '@/components/UniverseBackground.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -46,15 +47,11 @@ const onPasswordResetSuccess = (message: string) => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-neutral-950 relative overflow-hidden">
-        <!-- Fondo con partículas oscuras -->
-        <div class="absolute inset-0">
-            <div class="absolute top-12 left-1/3 w-1 h-1 bg-red-700/40 rounded-full animate-bounce"></div>
-            <div class="absolute bottom-24 right-1/4 w-1 h-1 bg-red-500/40 rounded-full animate-bounce delay-1000"></div>
-            <div class="absolute top-1/2 left-1/2 w-0.5 h-0.5 bg-white/20 rounded-full animate-bounce delay-2000"></div>
-        </div>
-
-        <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
+    <div class="min-h-screen relative overflow-hidden">
+        <!-- Fondo animado del universo -->
+        <UniverseBackground />
+        
+        <div class="relative z-20 min-h-screen flex items-center justify-center p-4">
             <div class="w-full max-w-sm">
                 <div class="relative">
                     <!-- Encabezado -->
@@ -73,7 +70,7 @@ const onPasswordResetSuccess = (message: string) => {
 
                     <!-- Formulario -->
                     <div class="relative">
-                        <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-xl">
+                        <div class="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-xl">
                             <Head title="Iniciar Sesión" />
 
                             <div v-if="status" class="mb-6 p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-green-300 text-sm">
@@ -92,7 +89,7 @@ const onPasswordResetSuccess = (message: string) => {
                                             id="email"
                                             v-model="form.email"
                                             type="email"
-                                            class="w-full px-3 py-2.5 bg-white/5 border border-red-700/40 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-400 transition-all duration-300 text-sm"
+                                            class="w-full px-3 py-2.5 bg-white/10 border border-red-700/40 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-400 transition-all duration-300 text-sm"
                                             placeholder="tu@email.com"
                                             required
                                             autofocus
@@ -116,7 +113,7 @@ const onPasswordResetSuccess = (message: string) => {
                                             id="password"
                                             v-model="form.password"
                                             type="password"
-                                            class="w-full px-3 py-2.5 bg-white/5 border border-red-700/40 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-400 transition-all duration-300 text-sm"
+                                            class="w-full px-3 py-2.5 bg-white/10 border border-red-700/40 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-400 transition-all duration-300 text-sm"
                                             placeholder="••••••••"
                                             required
                                             :tabindex="2"

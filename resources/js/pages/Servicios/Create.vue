@@ -23,12 +23,12 @@
       <!-- Formulario -->
       <div class="max-w-7xl mx-auto px-6 py-8 -mt-4 relative z-10">
         <!-- Mensaje de Éxito -->
-        <div v-if="showSuccessMessage" class="mb-6 p-4 bg-green-900/80 border border-green-500/50 text-white rounded-xl backdrop-blur-md shadow-lg animate-pulse">
-          <div class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+        <div v-if="showSuccessMessage" class="mb-4 flex items-center justify-center">
+          <div class="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-pulse">
+            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            <span class="font-semibold">{{ successMessage }}</span>
+            <span class="font-semibold text-sm">{{ successMessage }}</span>
           </div>
         </div>
 
